@@ -54,9 +54,14 @@ private keysPressed: { [key: string]: boolean } = {};
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(0, 5, 10);
 
+    const grid = new THREE.GridHelper(100,100,0x0a0a0a, 0x000000);
+    grid.position.set(0,0.01,0);
+    this.scene.add(grid);
    
     // Add ground
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
+
+
     const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x8c8c8c });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -104,7 +109,7 @@ private keysPressed: { [key: string]: boolean } = {};
     requestAnimationFrame(this.animate);
   
     // Update player position based on input
-    this.movePlayer();
+    // this.movePlayer();
   
     // Update camera position to follow the player
     this.updateCameraPosition();
@@ -141,73 +146,73 @@ private keysPressed: { [key: string]: boolean } = {};
     this.keysPressed[event.key] = false;
   }
 
-  private movePlayer(x?:any,y?:any): void {
-    let moveX = x ? x * this.moveDistance : 0;
-    let moveZ = y ? y * this.moveDistance : 0;
+  // private movePlayer(x?:any,y?:any): void {
+  //   let moveX = x ? x * this.moveDistance : 0;
+  //   let moveZ = y ? y * this.moveDistance : 0;
   
-    if (this.keysPressed['ArrowUp'] || this.keysPressed['w']) {
-      moveZ -= this.moveDistance;
-    }
-    if (this.keysPressed['ArrowDown'] || this.keysPressed['s']) {
-      moveZ += this.moveDistance;
-    }
-    if (this.keysPressed['ArrowLeft'] || this.keysPressed['a']) {
-      moveX -= this.moveDistance;
-    }
-    if (this.keysPressed['ArrowRight'] || this.keysPressed['d']) {
-      moveX += this.moveDistance;
-    }
+  //   if (this.keysPressed['ArrowUp'] || this.keysPressed['w']) {
+  //     moveZ -= this.moveDistance;
+  //   }
+  //   if (this.keysPressed['ArrowDown'] || this.keysPressed['s']) {
+  //     moveZ += this.moveDistance;
+  //   }
+  //   if (this.keysPressed['ArrowLeft'] || this.keysPressed['a']) {
+  //     moveX -= this.moveDistance;
+  //   }
+  //   if (this.keysPressed['ArrowRight'] || this.keysPressed['d']) {
+  //     moveX += this.moveDistance;
+  //   }
   
-    // Update player position
-    this.player.position.x += moveX;
-
-    if(y){
-      this.player.position.z -= moveZ;
-    } else {
-      this.player.position.z += moveZ;
-
-    }
-  
-    // console.log(`Player Position: X=${this.player.position.x}, Z=${this.player.position.z}`);
-
-     // Cek apakah pemain akan menabrak dinding
-      const newPlayerPosition = this.player.position.clone();
-      newPlayerPosition.x += moveX;
-      newPlayerPosition.z += moveZ;
-
-      const playerBoundingBox = new THREE.Box3().setFromObject(this.player);
-      playerBoundingBox.translate(new THREE.Vector3(moveX, 0, moveZ));
-
-      let collision = false;
-      for (const wall of this.walls) {
-        const wallBoundingBox = new THREE.Box3().setFromObject(wall);
-        if (playerBoundingBox.intersectsBox(wallBoundingBox)) {
-          collision = true;
-          break;
-        }
-      }
-
-      if (!collision) {
-        // Hanya update posisi pemain jika tidak ada tabrakan
-        this.player.position.x += moveX;
-
-        if(y){
-          this.player.position.z -= moveZ;
-        } else {
-          this.player.position.z += moveZ;
-    
-        }
-      }
-  }
-
-  // private movePlayer(x: number, y: number): void {
-  //   const moveX = x * this.moveDistance;
-  //   const moveZ = y * this.moveDistance;
-
   //   // Update player position
   //   this.player.position.x += moveX;
-  //   this.player.position.z -= moveZ; // Z-axis is inverted in this setup
+
+  //   if(y){
+  //     this.player.position.z -= moveZ;
+  //   } else {
+  //     this.player.position.z += moveZ;
+
+  //   }
+  
+  //   // console.log(`Player Position: X=${this.player.position.x}, Z=${this.player.position.z}`);
+
+  //    // Cek apakah pemain akan menabrak dinding
+  //     const newPlayerPosition = this.player.position.clone();
+  //     newPlayerPosition.x += moveX;
+  //     newPlayerPosition.z += moveZ;
+
+  //     const playerBoundingBox = new THREE.Box3().setFromObject(this.player);
+  //     playerBoundingBox.translate(new THREE.Vector3(moveX, 0, moveZ));
+
+  //     let collision = false;
+  //     for (const wall of this.walls) {
+  //       const wallBoundingBox = new THREE.Box3().setFromObject(wall);
+  //       if (playerBoundingBox.intersectsBox(wallBoundingBox)) {
+  //         collision = true;
+  //         break;
+  //       }
+  //     }
+
+  //     if (!collision) {
+  //       // Hanya update posisi pemain jika tidak ada tabrakan
+  //       this.player.position.x += moveX;
+
+  //   if(y){
+  //     this.player.position.z -= moveZ;
+  //   } else {
+  //     this.player.position.z += moveZ;
+
+  //   }
+  //     }
   // }
+
+  private movePlayer(x: number, y: number): void {
+    const moveX = x * this.moveDistance;
+    const moveZ = y * this.moveDistance;
+
+    // Update player position
+    this.player.position.x += moveX;
+    this.player.position.z -= moveZ; // Z-axis is inverted in this setup
+  }
 
   private initJoystick(): void {
     const options = {

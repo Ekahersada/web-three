@@ -15,3 +15,19 @@ canvas {
     background: #ffffff26;
     border-radius: 50%;
   }
+
+
+  .porto{
+    width: fit-content;
+    background: #3d6303;
+    position: absolute;
+    padding: 10px;
+    color: white;
+    border-radius: 21px;
+    top: 9px;
+    left: 7px;
+  }
+
+  .porto:hover{
+    cursor: pointer;
+  }
