@@ -35,9 +35,9 @@ private keysPressed: { [key: string]: boolean } = {};
 
   ngOnInit() {
     console.log('Game');
+    this.initJoystick();
     this.initThreeJS();
     this.animate();
-    this.initJoystick();
   }
 
   private initThreeJS(): void {
@@ -212,6 +212,8 @@ private keysPressed: { [key: string]: boolean } = {};
     this.joystick.on('move', (event: any, data: any) => {
       const x = data.vector.x;
       const y = data.vector.y;
+
+      console.log(x,y);
       this.movePlayer(x, y);
     });
   }
