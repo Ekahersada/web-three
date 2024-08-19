@@ -142,8 +142,8 @@ private keysPressed: { [key: string]: boolean } = {};
   }
 
   private movePlayer(x?:any,y?:any): void {
-    let moveX = 0;
-    let moveZ = 0;
+    let moveX = x ? x * this.moveDistance : 0;
+    let moveZ = y ? y * this.moveDistance : 0;
   
     if (this.keysPressed['ArrowUp'] || this.keysPressed['w']) {
       moveZ -= this.moveDistance;
@@ -160,7 +160,13 @@ private keysPressed: { [key: string]: boolean } = {};
   
     // Update player position
     this.player.position.x += moveX;
-    this.player.position.z += moveZ;
+
+    if(y){
+      this.player.position.z -= moveZ;
+    } else {
+      this.player.position.z += moveZ;
+
+    }
   
     // console.log(`Player Position: X=${this.player.position.x}, Z=${this.player.position.z}`);
 
@@ -184,7 +190,13 @@ private keysPressed: { [key: string]: boolean } = {};
       if (!collision) {
         // Hanya update posisi pemain jika tidak ada tabrakan
         this.player.position.x += moveX;
-        this.player.position.z += moveZ;
+
+        if(y){
+          this.player.position.z -= moveZ;
+        } else {
+          this.player.position.z += moveZ;
+    
+        }
       }
   }
 
