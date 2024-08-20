@@ -46,6 +46,7 @@ private keysPressed: { [key: string]: boolean } = {};
     // Initialize renderer
     this.renderer = new THREE.WebGLRenderer({ canvas });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    
 
     // Initialize scene
     this.scene = new THREE.Scene();
