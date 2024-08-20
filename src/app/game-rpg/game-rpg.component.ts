@@ -23,12 +23,19 @@ export class GameRpgComponent implements OnInit {
   private controls!: OrbitControls;
   private player!: THREE.Mesh;
   private walls: THREE.Mesh[] = [];
+  private npc:any[]=[];
 
   clock = new THREE.Clock();
 
   private character:any;
   private joystick: any;
 
+  private MaincharacterPOS: any;
+
+
+  npcSpeed = 0.03;
+
+  mixerNpc:any;
 
   private keypress:any = {
     a:false,
@@ -92,12 +99,127 @@ export class GameRpgComponent implements OnInit {
     this.initialModelCharacter();
     this.keyControl();
 
+    this.npc = [
+      {name:'npc1'},
+      {name:'npc1'},
+      {name:'npc1'},
+      // {name:'npc2'},
+      // {name:'npc3'},
+    ]
+
+    this.initNPC();
+    
+
 
   }
 
+  initNPC(){
+
+    // Create the NPC character
+
+
+    new GLTFLoader().load('./assets/models/Soldier.glb', (gltf) => {
+
+      let model = gltf.scene;
+
+    //   model.traverse(function (object: any) {
+    //     if (object.isMesh) object.castShadow = true;
+    // });
+
+      model.rotation.y = 8;
+
+      model.position.set(5,0,0);
+
+      this.scene.add(model);
+
+
+    })
+
+
+
+    this.npc.forEach((x:any,idx):any=>{
+
+      
+      const rand =  this.getRandomInt(1,5) ;
+
+      new GLTFLoader().load('./assets/models/Soldier.glb', (gltf) => {
+
+        let model = gltf.scene;
+
+      //   model.traverse(function (object: any) {
+      //     if (object.isMesh) object.castShadow = true;
+      // });
+      model.rotation.y = 8;  // Flip model 180 degrees
+
+        this.scene.add(model);
+
+            // Set up animation mixer
+           x.mixer = new THREE.AnimationMixer(model);
+
+
+        
+           console.log(model.rotation);
+            
+            // Add all animations from the GLB file to the mixer
+            gltf.animations.forEach((clip) => {
+              if(clip.name =='Walk'){
+                x.mixer.clipAction(clip).play(); // Play all animations
+              }
+              console.log(clip.name);
+          });
+
+            // Optionally adjust the model's scale and position
+            // model.scale.set(1, 1, 1); // Scale model if necessary
+            model.position.set(rand, 0, 0);
+            
+            x.char = model;// Position model if necessary
+
+      })
+
+    })
+
+    console.log(this.npc);
+
+
+  }
+
+  moveNpcRandomly() {
+    
+    this.npc.forEach(x=>{
+
+      if(x?.char){
+        const dx = this.MaincharacterPOS?.x - x.char.position.x;
+              const dz = this.MaincharacterPOS?.z - x.char.position.z;
+              const distance = Math.sqrt(dx * dx + dz * dz);
+  
+              if (distance > 0.1) { // Threshold to stop moving when close enough
+                  x.char.position.x += (dx / distance) * this.npcSpeed;
+                  x.char.position.z += (dz / distance) * this.npcSpeed;
+              }
+        
+
+      }
+    })
+}
+
+  getRandomInt(min:number, max:number) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+//   moveNpcRandomly() {
+//     const angle = Math.random() * 2 * Math.PI;
+//     npcCharacter.position.x += Math.cos(angle) * npcSpeed;
+//     npcCharacter.position.z += Math.sin(angle) * npcSpeed;
+// }
+
+
+
+
   initialModelCharacter(){
     // MODEL WITH ANIMATIONS
-    var characterControls: CharacterControls
+
     new GLTFLoader().load('./assets/models/Soldier.glb', (gltf) => {
         const model = gltf.scene;
 
@@ -187,8 +309,34 @@ export class GameRpgComponent implements OnInit {
     let mixerUpdateDelta = this.clock.getDelta();
     if (this.character) {
         this.character.update(mixerUpdateDelta, this.keypress);
+        this.MaincharacterPOS = this.character.model.position;
+
+      
+          this.npc.forEach(x=>{
+            
+
+            if(x?.mixer && x?.char){
+              x.mixer.update(mixerUpdateDelta);
+
+              const direction = new THREE.Vector3();
+              direction.subVectors(this.MaincharacterPOS, x.char.position).normalize();
+              const angle = Math.atan2(direction.z, direction.x);
+              x.char.rotation.y = angle + 2; // Rotate NPC to face the main character
+
+              // console.log(angle);
+
+
+              x.char.lookAt(this.MaincharacterPOS)
+            }
+
+          })
+        
+
+        // console.log(this.MaincharacterPOS)
     }
     this.controls.update()
+
+    this.moveNpcRandomly();
 
     requestAnimationFrame(this.animate);
 
