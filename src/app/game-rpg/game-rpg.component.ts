@@ -208,37 +208,85 @@ export class GameRpgComponent implements OnInit {
     this.joystick = nipplejs.create(options);
 
     this.joystick.on('move', (event: any, data: any) => {
-      var direction = data.direction;
-      if (direction) {
-          var key;
-          if (direction.angle === 'left') key = 'a';
-          if (direction.angle === 'right') key = 'd';
-          if (direction.angle === 'up') key = 'w';
-          if (direction.angle === 'down') key = 's';
-          this.triggerAction(key);
+
+
+      var vector = data.vector;
+      var activeKeys = [];
+
+      // Threshold untuk mendeteksi apakah gerakan lebih dominan di satu arah
+      var threshold = 0.5;
+
+      if (Math.abs(vector.x) > Math.abs(vector.y) * threshold) {
+          // Gerakan lebih dominan ke arah horizontal
+          if (vector.x < 0) {
+              activeKeys.push('a'); // Kiri
+          } else if (vector.x > 0) {
+              activeKeys.push('d'); // Kanan
+          }
       }
+
+      if (Math.abs(vector.y) > Math.abs(vector.x) * threshold) {
+          // Gerakan lebih dominan ke arah vertikal
+          if (vector.y < 0) {
+            activeKeys.push('s'); // Bawah
+          } else if (vector.y > 0) {
+            activeKeys.push('w'); // Atas
+          }
+      }
+
+        // console.log(vector);
+        this.updateDirectionStatus(activeKeys);
     });
 
     this.joystick.on('end', (event:any) =>{
-      this.triggerAction(null);
+      // this.triggerAction(null);
 
-  });
+      this.updateDirectionStatus([]);
+
+    });
   }
 
-  triggerAction(key:any) {
-    // Set semua arah menjadi false
-    for (var dir in this.keypress) {
-      this.keypress[dir] = false;
-    }
+  // Fungsi untuk mendeteksi arah berdasarkan sudut
+detectDirection(radian:any) {
+  var activeKeys = [];
 
-    // Set arah yang sesuai menjadi true
-    if (key) {
-        this.keypress[key] = true;
-    }
+  // Hitung berdasarkan radian (atau gunakan degree jika lebih mudah)
+  var angle = radian * (180 / Math.PI); // Konversi ke derajat
 
-  // Debugging: Lihat status arah di console
-  console.log(this.keypress);
+  if (angle >= 135 || angle <= -135) {
+      activeKeys.push('a'); // Kiri
+  }
+  if (angle >= -45 && angle <= 45) {
+      activeKeys.push('d'); // Kanan
+  }
+  if (angle > 45 && angle < 135) {
+      activeKeys.push('w'); // Atas
+  }
+  if (angle < -45 && angle > -135) {
+      activeKeys.push('s'); // Bawah
+  }
 
+  return activeKeys;
 }
+
+  // Fungsi untuk mengaktifkan arah dan menonaktifkan yang tidak digunakan
+ updateDirectionStatus(activeKeys:any) {
+
+ 
+  // Reset semua status ke false
+  for (var key in this.keypress) {
+      this.keypress[key] = false;
+  }
+  // Set arah yang aktif ke true
+  activeKeys.forEach((key:any)=>{
+      this.keypress[key] = true;
+  });
+
+  // console.log(this.keypress); // Debugging status arah
+}
+
+
+
+
 
 }
