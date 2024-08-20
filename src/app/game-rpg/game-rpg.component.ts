@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import { OrbitControls, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { CharacterControls } from './characterControls';
 import { KeyDisplay } from './utils';
+import nipplejs from 'nipplejs';
+
 
 
 @Component({
@@ -12,6 +14,8 @@ import { KeyDisplay } from './utils';
 })
 export class GameRpgComponent implements OnInit {
   @ViewChild('canvas2', { static: true }) canvasRef!: ElementRef;
+  @ViewChild('joystickContainer', { static: true }) joystickContainer!: ElementRef;
+
   
   private renderer!: THREE.WebGLRenderer;
   private scene!: THREE.Scene;
@@ -23,8 +27,15 @@ export class GameRpgComponent implements OnInit {
   clock = new THREE.Clock();
 
   private character:any;
+  private joystick: any;
 
-  private keypress = {}
+
+  private keypress:any = {
+    a:false,
+    s:false,
+    d:false,
+    w:false
+  }
 
 
   constructor() { }
@@ -32,6 +43,7 @@ export class GameRpgComponent implements OnInit {
   ngOnInit() {
     this.initThreeJS();
     this.animate();
+    this.initJoystick();
   }
 
   private initThreeJS(): void {
@@ -182,5 +194,51 @@ export class GameRpgComponent implements OnInit {
 
     this.renderer.render(this.scene, this.camera);
   };
+
+  private initJoystick(): void {
+    const options = {
+      zone: this.joystickContainer.nativeElement,
+      color: 'blue',
+      size: 100,
+      position: { left: '50%', top: '50%' },
+      lockX: false,
+      lockY: false,
+    };
+
+    this.joystick = nipplejs.create(options);
+
+    this.joystick.on('move', (event: any, data: any) => {
+      var direction = data.direction;
+      if (direction) {
+          var key;
+          if (direction.angle === 'left') key = 'a';
+          if (direction.angle === 'right') key = 'd';
+          if (direction.angle === 'up') key = 'w';
+          if (direction.angle === 'down') key = 's';
+          this.triggerAction(key);
+      }
+    });
+
+    this.joystick.on('end', (event:any) =>{
+      this.triggerAction(null);
+
+  });
+  }
+
+  triggerAction(key:any) {
+    // Set semua arah menjadi false
+    for (var dir in this.keypress) {
+      this.keypress[dir] = false;
+    }
+
+    // Set arah yang sesuai menjadi true
+    if (key) {
+        this.keypress[key] = true;
+    }
+
+  // Debugging: Lihat status arah di console
+  console.log(this.keypress);
+
+}
 
 }
