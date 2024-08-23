@@ -49,6 +49,8 @@ export class GameRpgComponent implements OnInit {
 
   npcSpeed = 0.03;
 
+  totalUser = 1;
+
   mixerNpc:any;
 
   private keypress:any = {
@@ -77,7 +79,9 @@ export class GameRpgComponent implements OnInit {
       Object.keys(players).forEach((id) => {
         if (id !== this.socket.id) {
           this.addPlayer(id, players[id]);
+          
         }
+        this.totalUser++;
       });
     });
 
@@ -176,6 +180,10 @@ export class GameRpgComponent implements OnInit {
           // animationsMap.push({key:a.name, mixer: mixer.clipAction(a)});
       })
 
+      const toPlay = animationsMap.get('Idle')
+
+      toPlay?.reset().fadeIn(this.fadeDuration).play();
+
 
         
       
@@ -184,7 +192,7 @@ export class GameRpgComponent implements OnInit {
             status:playerData.movementStatus,
             mixer:mixer,
             animation:animationsMap,
-            current:'Idle',
+            current:'Walk',
             lastPosition: player.position.clone()
           };
           this.scene.add(player);

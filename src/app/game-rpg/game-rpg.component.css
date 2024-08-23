@@ -8,3 +8,10 @@
     background: #ffffff26;
     border-radius: 50%;
   }
+
+  .player-online{
+    position: absolute;
+    color: white;
+    left: 6px;
+    top: 8px;
+  }
