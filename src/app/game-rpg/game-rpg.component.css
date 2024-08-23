@@ -15,3 +15,7 @@
     left: 6px;
     top: 8px;
   }
+
+  canvas{
+    overflow: hidden;
+  }

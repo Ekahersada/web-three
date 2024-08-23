@@ -1,10 +1,11 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three'
-import { OrbitControls, GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { OrbitControls, GLTFLoader,  } from 'three/examples/jsm/Addons.js';
 import { CharacterControls } from './characterControls';
 import { KeyDisplay } from './utils';
 import nipplejs from 'nipplejs';
 import * as io from 'socket.io-client';
+
 
 
 
@@ -49,7 +50,7 @@ export class GameRpgComponent implements OnInit {
 
   npcSpeed = 0.03;
 
-  totalUser = 1;
+  totalUser = 0;
 
   mixerNpc:any;
 
@@ -88,6 +89,9 @@ export class GameRpgComponent implements OnInit {
     // Handle new player
     this.socket.on('newPlayer', (data: any) => {
       this.addPlayer(data.id, data.player);
+      this.totalUser++;
+
+      console.log(this.players);
     });
 
     // Handle player movement
@@ -106,6 +110,14 @@ export class GameRpgComponent implements OnInit {
           data.player.rotation.z
         );
 
+        this.players[data.id].sprite.position.set(
+          data.player.rotation.x,
+          data.player.rotation.y ,
+          data.player.rotation.z + 2
+        )
+
+
+
         // console.log(data);
         this.updateAnimation(data.id, data.player.movementStatus);
       }
@@ -119,6 +131,34 @@ export class GameRpgComponent implements OnInit {
       }
     });
   }
+  private createPlayerName(playerName: string): THREE.Sprite {
+    // Buat canvas untuk menggambar teks
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+    context.font = 'Bold 30px Arial';
+    context.fillStyle = 'white';
+  
+    // Sesuaikan ukuran canvas dengan panjang teks
+    const textWidth = context.measureText(playerName).width;
+    canvas.width = textWidth;
+    canvas.height = 40;
+  
+    // Gambar teks pada canvas
+    context.font = 'Bold 30px Arial';
+    context.fillStyle = 'white';
+    context.fillText(playerName, 0, 30);
+  
+    // Buat texture dari canvas
+    const texture = new THREE.CanvasTexture(canvas);
+  
+    // Buat material dan sprite untuk menampilkan teks
+    const material = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(canvas.width / 50, canvas.height / 50, 1); // Atur ukuran sprite sesuai kebutuhan
+  
+    return sprite;
+  }
+
 
   updateAnimation(playerId: string, movementStatus: string) {
     if (this.players[playerId]) {
@@ -185,10 +225,17 @@ export class GameRpgComponent implements OnInit {
       toPlay?.reset().fadeIn(this.fadeDuration).play();
 
 
+      const playerNameSprite = this.createPlayerName(playerData?.name);
+    playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
+    this.scene.add(playerNameSprite);
+
+
         
       
           this.players[id] = {
             model:player,
+            sprite:playerNameSprite,
+            name: playerData?.name,
             status:playerData.movementStatus,
             mixer:mixer,
             animation:animationsMap,
@@ -215,6 +262,8 @@ export class GameRpgComponent implements OnInit {
       // console.log(this.isMoving);
 
       let movementStatus = this.isMoving ? 'Run' : 'Idle';
+
+
       // let movementStatus ='Idle';
 
       // const currentPosition = new THREE.Vector3(position.x, position.y, position.z);
@@ -501,7 +550,14 @@ export class GameRpgComponent implements OnInit {
 
         this.character.currentAction == 'Run' ? this.isMoving = true : this.isMoving = false; 
 
-        // console.log(this.character);
+
+
+         // Update posisi atau rotasi sprite agar selalu menghadap kamera
+        this.scene.children.forEach((child) => {
+          if (child instanceof THREE.Sprite) {
+            child.lookAt(this.camera.position);
+          }
+        });
 
 
 

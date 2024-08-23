@@ -21,7 +21,8 @@ io.on('connection', (socket) => {
   players[socket.id] = {
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
-    movementStatus: 'Idle' // idle, walking, running
+    movementStatus: 'Idle', // idle, walking, running
+    name: socket.id
   };
 
   // Send the players list to the new player
@@ -31,6 +32,11 @@ io.on('connection', (socket) => {
 
   // Broadcast new player to other players
   socket.broadcast.emit('newPlayer', { id: socket.id, player: players[socket.id] });
+  
+
+  socket.on('sendMessage', (data)=>{
+    socket.emit('message', {name: data.name, message: data.message });
+  })
 
   // Handle player movement
   socket.on('movePlayer', (data) => {
@@ -38,6 +44,7 @@ io.on('connection', (socket) => {
       players[socket.id].position = data.position;
       players[socket.id].rotation = data.rotation;
       players[socket.id].movementStatus = data.movementStatus;
+      players[socket.id].name = data?.name;
 
       // Broadcast the movement to other players
       socket.broadcast.emit('playerMoved', { id: socket.id, player: players[socket.id] });
