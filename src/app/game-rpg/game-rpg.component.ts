@@ -31,6 +31,7 @@ export class GameRpgComponent implements OnInit {
   runThreshold = 0.2; // Speed threshold for running
 
   clock = new THREE.Clock();
+  fadeDuration: number = 0.2
 
   isMoving: boolean = false;
 
@@ -120,29 +121,22 @@ export class GameRpgComponent implements OnInit {
       const mixer = this.players[playerId].mixer;
       const anim = this.players[playerId].animation;
 
-      // console.log(this.players[playerId]);
 
-    //   anim.forEach((value:any, key:any) => {
-    //     if (key == movementStatus) {
-    //         mixer.clipAction(key).play();
-    //     }
-    // })
+      if(movementStatus !=  this.players[playerId].current){
+        let curr = this.players[playerId].current;
 
-      // console.log(mixer);
+        const toPlay = anim.get(movementStatus)
+        const current = anim.get(curr)
 
-      // Update the animation based on movement status
-      if (movementStatus === 'Run') {
-        // Play running animation
-        // mixer.mixer.clipAction('Run').play();
+        current!.fadeOut(this.fadeDuration)
+        toPlay!.reset().fadeIn(this.fadeDuration).play();
 
-      } else if (movementStatus === 'walk') {
-        // Play walking animation
-        // mixer.clipAction('walk').play();
-      } else {
-        // Play idle animation
-        // console.log(mixer.clipAction('Idle'));
-        // mixer.clipAction('Idle').play();
+        this.players[playerId].current = movementStatus;
+
       }
+
+    
+    
     }
   }
 
@@ -175,8 +169,11 @@ export class GameRpgComponent implements OnInit {
       const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
 
       const animationsMap: Map<string, THREE.AnimationAction> = new Map()
+      // const animationsMap: any = [];
+
       gltfAnimations.filter(a => a.name != 'TPose').forEach((a: THREE.AnimationClip) => {
           animationsMap.set(a.name, mixer.clipAction(a))
+          // animationsMap.push({key:a.name, mixer: mixer.clipAction(a)});
       })
 
 
@@ -187,6 +184,7 @@ export class GameRpgComponent implements OnInit {
             status:playerData.movementStatus,
             mixer:mixer,
             animation:animationsMap,
+            current:'Idle',
             lastPosition: player.position.clone()
           };
           this.scene.add(player);
@@ -208,8 +206,8 @@ export class GameRpgComponent implements OnInit {
 
       // console.log(this.isMoving);
 
-      // let movementStatus = this.isMoving ? 'Run' : 'Idle';
-      let movementStatus ='Idle';
+      let movementStatus = this.isMoving ? 'Run' : 'Idle';
+      // let movementStatus ='Idle';
 
       // const currentPosition = new THREE.Vector3(position.x, position.y, position.z);
       // const distanceMoved = currentPosition.distanceTo(this.players[this.socket.id].lastPosition);
@@ -465,11 +463,14 @@ export class GameRpgComponent implements OnInit {
             this.character.switchRunToggle()
         } else {
             (this.keypress as any)[event.key.toLowerCase()] = true
+            this.isMoving = true;
         }
     }, false);
     document.addEventListener('keyup', (event) => {
         keyDisplayQueue.up(event.key);
         (this.keypress as any)[event.key.toLowerCase()] = false
+        this.isMoving = false;
+
     }, false);
   }
 
@@ -489,6 +490,10 @@ export class GameRpgComponent implements OnInit {
         this.MaincharacterPOS = this.character.model.position;
         this.MainPlayerControl.position = this.character.model.position;
         this.MainPlayerControl.rotation = this.character.model.rotation;
+
+        this.character.currentAction == 'Run' ? this.isMoving = true : this.isMoving = false; 
+
+        // console.log(this.character);
 
 
 
