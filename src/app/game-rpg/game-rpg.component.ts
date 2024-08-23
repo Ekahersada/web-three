@@ -68,7 +68,8 @@ export class GameRpgComponent implements OnInit {
   }
 
   initSocket() {
-    this.socket = io.connect('localhost:3000');
+    // this.socket = io.connect('localhost:3000');
+    this.socket = io.connect('https://game.hostrx.net');
 
     // Handle current players
     this.socket.on('currentPlayers', (players: any) => {
