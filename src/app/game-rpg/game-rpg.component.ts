@@ -5,6 +5,9 @@ import { CharacterControls } from './characterControls';
 import { KeyDisplay } from './utils';
 import nipplejs from 'nipplejs';
 import * as io from 'socket.io-client';
+import { MatDialog } from '@angular/material/dialog';
+import { ModalSettingComponent } from '../modals/modal-setting/modal-setting.component';
+import { lastValueFrom } from 'rxjs';
 
 
 
@@ -27,6 +30,8 @@ export class GameRpgComponent implements OnInit {
   private player!: THREE.Mesh;
   private walls: THREE.Mesh[] = [];
   private npc:any[]=[];
+
+  init:boolean = true;
 
   movementThreshold = 0.05; // Distance threshold for detecting movement
   runThreshold = 0.2; // Speed threshold for running
@@ -64,13 +69,34 @@ export class GameRpgComponent implements OnInit {
   }
 
 
-  constructor() { }
+  constructor(
+    private modal : MatDialog
+  ) { }
 
   ngOnInit() {
     this.initThreeJS();
+    this.openName();
 
     this.animate();
     this.initJoystick();
+  }
+
+  openName(){
+    let modal = this.modal.open(ModalSettingComponent,{
+      data:this.myName,
+      disableClose:true
+    })
+
+
+    lastValueFrom(modal.afterClosed()).then(res=>{
+      if(res?.name){
+        this.myName = res.name;
+        this.updateSpriteText(this.MainPlayerControl.sprite, this.myName);
+        this.init = false;
+      }
+    })
+
+    
   }
 
   initSocket() {
@@ -119,12 +145,8 @@ export class GameRpgComponent implements OnInit {
         )
 
         if(this.players[data.id].name != data.player.name){
-          let playerNameSprite = this.createPlayerName(data.player?.name);
-          playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
-          this.players[data.id].sprite = playerNameSprite;
+          this.updateSpriteText(this.players[data.id].sprite, data.player.name);
           this.players[data.id].name = data.player.name;
-          this.scene.add(playerNameSprite);
-
         }
 
 
@@ -169,6 +191,35 @@ export class GameRpgComponent implements OnInit {
     sprite.scale.set(canvas.width / 50, canvas.height / 50, 1); // Atur ukuran sprite sesuai kebutuhan
   
     return sprite;
+  }
+
+ updateSpriteText(sprite: THREE.Sprite, newText: string) {
+    // Buat canvas untuk menggambar teks
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+    const fontSize = 20;
+    context.font = 'Semibold 10px Arial';
+    context.fillStyle = 'white';
+  
+    // Hitung lebar teks dan sesuaikan ukuran canvas
+    const textWidth = context!.measureText(newText).width;
+    canvas.width = textWidth;
+    canvas.height = fontSize;
+  
+    // Bersihkan canvas sebelumnya dan gambar teks baru
+    context!.clearRect(0, 0, canvas.width, canvas.height);
+    // Gambar teks pada canvas
+    context.font = 'Semibold 10px Arial';
+    context.fillStyle = 'white';
+    context.fillText(newText, 0, fontSize);
+  
+    // Buat texture baru dari canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    sprite.material.map = texture;
+    sprite.material.needsUpdate = true;
+  
+    // Sesuaikan skala sprite berdasarkan ukuran teks baru
+    sprite.scale.set(canvas.width / 50, canvas.height / 50, 1); // Atur ukuran sprite sesuai kebutuhan
   }
 
 
@@ -271,7 +322,7 @@ export class GameRpgComponent implements OnInit {
       const position = this.MainPlayerControl.position;
       const rotation = this.MainPlayerControl.rotation;
 
-      
+
 
       // console.log(this.isMoving);
 
@@ -298,7 +349,7 @@ export class GameRpgComponent implements OnInit {
         name: this.myName
       });
 
-      console.log(this.myName);
+      // console.log(this.myName);
     }
   }
 
@@ -543,8 +594,11 @@ export class GameRpgComponent implements OnInit {
         if (event.shiftKey && this.character) {
             this.character.switchRunToggle()
         } else {
+
+          if(!this.init){
             (this.keypress as any)[event.key.toLowerCase()] = true
             this.isMoving = true;
+          }
         }
     }, false);
     document.addEventListener('keyup', (event) => {

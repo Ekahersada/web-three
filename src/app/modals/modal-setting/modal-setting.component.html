@@ -1,0 +1,13 @@
+<mat-dialog-content class="text-center">
+  <p>Ganti Nama</p>
+  <p>
+    <mat-form-field class="example-full-width">
+      <mat-label>Nama</mat-label>
+      <input type="text" matInput [(ngModel)]="myName" placeholder="Ex. Jhone doe">
+    </mat-form-field>
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="submit()">Submit</button>
+</mat-dialog-actions>
