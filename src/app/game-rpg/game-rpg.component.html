@@ -1,7 +1,13 @@
 
-<div #joystickContainer class="joystick"></div>
+<div class="bx">
+    <div #joystickContainer class="joystick"></div>
+</div>
 <div class="player-online">
     Online {{totalUser}}
+</div>
+
+<div class="nme">
+    Ganti Nama <input type="text" [(ngModel)]="myName">
 </div>
 <div id="npc-character"></div>
 <canvas #canvas2></canvas>

@@ -43,6 +43,8 @@ export class GameRpgComponent implements OnInit {
 
   private MainPlayerControl:any = {};
 
+  myName = 'Jhone eo'
+
   socket: any;
 
   players: { [key: string]: any } = {};
@@ -110,11 +112,20 @@ export class GameRpgComponent implements OnInit {
           data.player.rotation.z
         );
 
-        this.players[data.id].sprite.position.set(
-          data.player.rotation.x,
-          data.player.rotation.y ,
-          data.player.rotation.z + 2
+        this.players[data.id].sprite?.position.set(
+          data.player.position.x,
+          data.player.position.y + 2,
+          data.player.position.z
         )
+
+        if(this.players[data.id].name != data.player.name){
+          let playerNameSprite = this.createPlayerName(data.player?.name);
+          playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
+          this.players[data.id].sprite = playerNameSprite;
+          this.players[data.id].name = data.player.name;
+          this.scene.add(playerNameSprite);
+
+        }
 
 
 
@@ -135,18 +146,19 @@ export class GameRpgComponent implements OnInit {
     // Buat canvas untuk menggambar teks
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d')!;
-    context.font = 'Bold 30px Arial';
+    const fontSize = 20;
+    context.font = 'Semibold 10px Arial';
     context.fillStyle = 'white';
   
     // Sesuaikan ukuran canvas dengan panjang teks
     const textWidth = context.measureText(playerName).width;
     canvas.width = textWidth;
-    canvas.height = 40;
+    canvas.height = fontSize;
   
     // Gambar teks pada canvas
-    context.font = 'Bold 30px Arial';
+    context.font = 'Semibold 10px Arial';
     context.fillStyle = 'white';
-    context.fillText(playerName, 0, 30);
+    context.fillText(playerName, 0, fontSize);
   
     // Buat texture dari canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -225,7 +237,7 @@ export class GameRpgComponent implements OnInit {
       toPlay?.reset().fadeIn(this.fadeDuration).play();
 
 
-      const playerNameSprite = this.createPlayerName(playerData?.name);
+    let playerNameSprite = this.createPlayerName(playerData?.name);
     playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
     this.scene.add(playerNameSprite);
 
@@ -259,6 +271,8 @@ export class GameRpgComponent implements OnInit {
       const position = this.MainPlayerControl.position;
       const rotation = this.MainPlayerControl.rotation;
 
+      
+
       // console.log(this.isMoving);
 
       let movementStatus = this.isMoving ? 'Run' : 'Idle';
@@ -280,8 +294,11 @@ export class GameRpgComponent implements OnInit {
       this.socket.emit('movePlayer', {
         position: { x: position.x, y: position.y, z: position.z },
         rotation: { x: rotation.x, y: rotation.y, z: rotation.z },
-        movementStatus: movementStatus
+        movementStatus: movementStatus,
+        name: this.myName
       });
+
+      console.log(this.myName);
     }
   }
 
@@ -301,14 +318,16 @@ export class GameRpgComponent implements OnInit {
 
     // Initialize camera
     this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.set(5, 5, 0);
+    this.camera.position.set(24, 18, 0);
 
      // Initialize OrbitControls
      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
      this.controls.enableDamping = true;
      this.controls.minDistance = 5;
-     this.controls.maxDistance = 15;
+     this.controls.maxDistance = 20;
      this.controls.enablePan = false;
+     this.controls.enableZoom = true;
+     this.controls.enableRotate = true;
      this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
     //Add LIGHT
@@ -465,7 +484,12 @@ export class GameRpgComponent implements OnInit {
 
         console.log(animationsMap);
 
-        this.character = new CharacterControls(model, mixer, animationsMap, this.controls, this.camera,  'Idle')
+        this.character = new CharacterControls(model, mixer, animationsMap, this.controls, this.camera,  'Idle');
+
+        const playerNameSprite = this.createPlayerName(this.myName);
+        playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
+        this.scene.add(playerNameSprite);
+        this.MainPlayerControl.sprite = playerNameSprite;
 
         this.initSocket();
 
@@ -547,6 +571,7 @@ export class GameRpgComponent implements OnInit {
         this.MaincharacterPOS = this.character.model.position;
         this.MainPlayerControl.position = this.character.model.position;
         this.MainPlayerControl.rotation = this.character.model.rotation;
+        this.MainPlayerControl.sprite.position.set(this.MaincharacterPOS.x,this.MaincharacterPOS.y + 2, this.MaincharacterPOS.z);
 
         this.character.currentAction == 'Run' ? this.isMoving = true : this.isMoving = false; 
 

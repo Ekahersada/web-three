@@ -1,10 +1,9 @@
 .joystick{
-    bottom: 34px;
-    left: 3px;
+    bottom: 18px;
     position: absolute !important;
-    touch-action: none;
-    width: 200px;
-    height: 200px;
+    width: 100px;
+    height: 100px;
+    touch-action: none !important;
     background: #ffffff26;
     border-radius: 50%;
   }
@@ -18,4 +17,21 @@
 
   canvas{
     overflow: hidden;
+  }
+
+  .bx{
+    width: 100%;
+    position: absolute;
+    bottom: 0px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .nme{
+    position: absolute;
+    top: 0;
+    right: 0;
   }
