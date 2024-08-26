@@ -16,6 +16,7 @@
 
   canvas{
     overflow: hidden;
+    position: fixed;
   }
 
   .bx{

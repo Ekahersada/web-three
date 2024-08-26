@@ -82,6 +82,7 @@ export class GameRpgComponent implements OnInit {
   }
 
   openName(){
+    this.init = true
     let modal = this.modal.open(ModalSettingComponent,{
       data:this.myName,
       disableClose:true
@@ -592,7 +593,9 @@ export class GameRpgComponent implements OnInit {
     document.addEventListener('keydown', (event) => {
         keyDisplayQueue.down(event.key)
         if (event.shiftKey && this.character) {
+          if(!this.init){
             this.character.switchRunToggle()
+          }
         } else {
 
           if(!this.init){

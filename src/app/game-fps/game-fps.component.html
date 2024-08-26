@@ -1,8 +1,12 @@
-<div #rendererContainer class="renderer-container"></div>
-<div class="crosshair"></div>
+<div id="crosshair" class="crosshair z-10"></div>
 
 <!-- HUD -->
 <div class="hud">
   <div class="hud-item">Health: <span id="health">100</span></div>
   <div class="hud-item">Ammo: <span id="ammo">30</span></div>
 </div>
+
+<div class="absolute bottom-0 bg-white bg-opacity-50 h-[100px] w-[100px] z-10" (click)="shoot()">
+  
+</div>
+<div #rendererContainer class="renderer-container"></div>
