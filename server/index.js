@@ -22,16 +22,23 @@ io.on('connection', (socket) => {
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
     movementStatus: 'Idle', // idle, walking, running
+    health:100,
     name: socket.id
   };
 
   // Send the players list to the new player
   socket.emit('currentPlayers', players);
 
-  console.log(players);
+  // console.log(players);
 
   // Broadcast new player to other players
   socket.broadcast.emit('newPlayer', { id: socket.id, player: players[socket.id] });
+
+
+   // Terima data peluru dari klien dan broadcast ke semua klien
+   socket.on('shootBullet', (bulletData) => {
+    io.emit('bulletPosition', bulletData);
+  });
   
 
   socket.on('sendMessage', (data)=>{
@@ -45,6 +52,7 @@ io.on('connection', (socket) => {
       players[socket.id].rotation = data.rotation;
       players[socket.id].movementStatus = data.movementStatus;
       players[socket.id].name = data?.name;
+      players[socket.id].health = data?.health;
 
       // Broadcast the movement to other players
       socket.broadcast.emit('playerMoved', { id: socket.id, player: players[socket.id] });

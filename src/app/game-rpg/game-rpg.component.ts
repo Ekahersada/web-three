@@ -8,6 +8,7 @@ import * as io from 'socket.io-client';
 import { MatDialog } from '@angular/material/dialog';
 import { ModalSettingComponent } from '../modals/modal-setting/modal-setting.component';
 import { lastValueFrom } from 'rxjs';
+import { GameRpgService } from '../shared/game-rpg.service';
 
 
 
@@ -29,9 +30,12 @@ export class GameRpgComponent implements OnInit {
   private controls!: OrbitControls;
   private player!: THREE.Mesh;
   private walls: THREE.Mesh[] = [];
+  
   private npc:any[]=[];
 
-  init:boolean = true;
+  init:boolean = false;
+  
+  demage = 10;
 
   movementThreshold = 0.05; // Distance threshold for detecting movement
   runThreshold = 0.2; // Speed threshold for running
@@ -53,6 +57,11 @@ export class GameRpgComponent implements OnInit {
   socket: any;
 
   players: { [key: string]: any } = {};
+  playerArr:any[]=[];
+
+  private bullets: Bullet[] = [];
+
+  health:number = 100;
 
 
   npcSpeed = 0.03;
@@ -70,12 +79,15 @@ export class GameRpgComponent implements OnInit {
 
 
   constructor(
-    private modal : MatDialog
+    private modal : MatDialog,
+    private rpgServ: GameRpgService
   ) { }
 
   ngOnInit() {
     this.initThreeJS();
-    this.openName();
+
+  
+    // this.openName();
 
     this.animate();
     this.initJoystick();
@@ -120,12 +132,21 @@ export class GameRpgComponent implements OnInit {
       this.addPlayer(data.id, data.player);
       this.totalUser++;
 
-      console.log(this.players);
+      // console.log(this.players);
     });
+
+    // Terima posisi peluru dari server dan tambahkan ke scene
+    this.socket.on('bulletPosition', (bulletData: any) => {
+      this.createBulletFromData(bulletData);
+    });
+
+    
 
     // Handle player movement
     this.socket.on('playerMoved', (data: any) => {
       if (this.players[data.id]) {
+
+        let player =  this.players[data.id];
 
         // console.log(this.players[data.id]);
         this.players[data.id].model.position.set(
@@ -145,9 +166,28 @@ export class GameRpgComponent implements OnInit {
           data.player.position.z
         )
 
+        this.players[data.id].barHealth?.position.set(
+          data.player.position.x,
+          data.player.position.y + 2.1,
+          data.player.position.z
+        )
+
         if(this.players[data.id].name != data.player.name){
           this.updateSpriteText(this.players[data.id].sprite, data.player.name);
           this.players[data.id].name = data.player.name;
+        }
+
+
+        if(this.players[data.id].health != data.player.health ){
+
+            this.rpgServ.updateHealth(this.players[data.id].barHealth, data.player.health);
+            this.players[data.id].health = data.player.health;
+        }
+
+        let idx = this.playerArr.indexOf((x:any)=> x.id == data.id)
+
+        if(idx != -1){
+          this.playerArr[idx] = {...this.playerArr[idx], ...player};
         }
 
 
@@ -160,11 +200,25 @@ export class GameRpgComponent implements OnInit {
     // Handle player disconnect
     this.socket.on('playerDisconnected', (id: string) => {
       if (this.players[id]) {
+        this.totalUser--;
+        this.playerArr.filter(p => p.id ! == id);
         this.scene.remove(this.players[id]);
+
         delete this.players[id];
       }
     });
   }
+
+
+  private createBulletFromData(bulletData: any): void {
+    const bulletPosition = new THREE.Vector3(bulletData.x, bulletData.y, bulletData.z);
+    const bulletDirection = new THREE.Vector3(bulletData.dx, bulletData.dy, bulletData.dz);
+    const bullet = new Bullet(bulletPosition, bulletDirection);
+    this.bullets.push(bullet);
+    this.scene.add(bullet.mesh);
+  }
+
+  
   private createPlayerName(playerName: string): THREE.Sprite {
     // Buat canvas untuk menggambar teks
     const canvas = document.createElement('canvas');
@@ -193,6 +247,8 @@ export class GameRpgComponent implements OnInit {
   
     return sprite;
   }
+
+  
 
  updateSpriteText(sprite: THREE.Sprite, newText: string) {
     // Buat canvas untuk menggambar teks
@@ -293,12 +349,18 @@ export class GameRpgComponent implements OnInit {
     playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
     this.scene.add(playerNameSprite);
 
+    // add Bar health
+    let barHealth = this.rpgServ.createHealthBarSprite(playerData.health);
+    this.scene.add(barHealth);
+
 
         
       
           this.players[id] = {
             model:player,
+            id:id,
             sprite:playerNameSprite,
+            barHealth: barHealth,
             name: playerData?.name,
             status:playerData.movementStatus,
             mixer:mixer,
@@ -306,6 +368,9 @@ export class GameRpgComponent implements OnInit {
             current:'Walk',
             lastPosition: player.position.clone()
           };
+
+          this.playerArr.push(this.players[id]);
+
           this.scene.add(player);
 
 
@@ -347,7 +412,8 @@ export class GameRpgComponent implements OnInit {
         position: { x: position.x, y: position.y, z: position.z },
         rotation: { x: rotation.x, y: rotation.y, z: rotation.z },
         movementStatus: movementStatus,
-        name: this.myName
+        name: this.myName,
+        health: Number(this.health)
       });
 
       // console.log(this.myName);
@@ -410,7 +476,7 @@ export class GameRpgComponent implements OnInit {
       // {name:'npc3'},
     ]
 
-    // this.initNPC();
+    this.initNPC();
     
 
 
@@ -421,17 +487,18 @@ export class GameRpgComponent implements OnInit {
     // Create the NPC character
 
 
-    new GLTFLoader().load('./assets/models/Soldier.glb', (gltf) => {
+    // new GLTFLoader().load('./assets/models/Soldier.glb', (gltf) => {
 
-      let model = gltf.scene;
+    //   let model = gltf.scene;
 
-      model.rotation.y = 8;
+    //   model.rotation.y = 8;
 
-      model.position.set(5,0,0);
+    //   model.position.set(5,0,0);
+    //   model.name = 'npc';
 
-      this.scene.add(model);
+    //   this.scene.add(model);
 
-    })
+    // })
 
 
 
@@ -524,7 +591,10 @@ export class GameRpgComponent implements OnInit {
         // console.log(model);
         model.traverse(function (object: any) {
             if (object.isMesh) object.castShadow = true;
+
+            
         });
+        model.name = 'MainPalayer';
         this.scene.add(model);
 
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
@@ -534,7 +604,7 @@ export class GameRpgComponent implements OnInit {
             animationsMap.set(a.name, mixer.clipAction(a))
         })
 
-        console.log(animationsMap);
+        // console.log(animationsMap);
 
         this.character = new CharacterControls(model, mixer, animationsMap, this.controls, this.camera,  'Idle');
 
@@ -542,8 +612,14 @@ export class GameRpgComponent implements OnInit {
         playerNameSprite.position.set(0, 2, 0); // Misalnya 2 unit di atas karakter
         this.scene.add(playerNameSprite);
         this.MainPlayerControl.sprite = playerNameSprite;
+        
+        // let barHealth = this.rpgServ.createHealthBarSprite(100);
+        // this.MainPlayerControl.barHealth = barHealth;
+        // this.scene.add(barHealth);
 
         this.initSocket();
+
+    
 
     });
   }
@@ -617,6 +693,8 @@ export class GameRpgComponent implements OnInit {
     this.renderer.setSize( window.innerWidth, window.innerHeight );
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+
+    
 })
   }
 
@@ -646,6 +724,7 @@ export class GameRpgComponent implements OnInit {
         Object.values(this.players).forEach(({ mixer }) => mixer.update(mixerUpdateDelta));
         this.updatePlayerMovement();
 
+        this.updateBullet();
       
           // this.npc.forEach(x=>{
             
@@ -679,6 +758,100 @@ export class GameRpgComponent implements OnInit {
 
     this.renderer.render(this.scene, this.camera);
   };
+
+  onShoot(): void {
+    // const bullet = new Bullet(this.camera.position.clone(), this.camera.getWorldDirection(new THREE.Vector3()));
+    // this.bullets.push(bullet);
+    // this.scene.add(bullet.mesh);
+
+
+     // Posisi awal peluru adalah di depan karakter
+      const bulletPosition = new THREE.Vector3();
+      this.character.model.getWorldPosition(bulletPosition);
+
+      // Arah tembakan mengikuti arah depan karakter
+      const direction = new THREE.Vector3(0, 0, -1); // Arah depan relatif terhadap karakter
+      direction.applyQuaternion(this.character.model.quaternion); // Menyesuaikan arah dengan rotasi karakter
+
+      // Offset untuk mengeluarkan peluru sedikit di depan karakter
+      const offset = direction.clone().multiplyScalar(1.5); // Mengatur jarak dari karakter
+      bulletPosition.add(offset);
+
+      // Buat peluru dan tambahkan ke scene
+      // const bullet = new Bullet(bulletPosition, direction);
+      // this.bullets.push(bullet);
+      // this.scene.add(bullet.mesh);
+
+
+      const bulletData = {
+        x: this.character.model.position.x,
+        y: this.character.model.position.y,
+        z: this.character.model.position.z,
+        dx: direction.x,
+        dy: direction.y,
+        dz: direction.z,
+        id:this.socket.id
+      };
+  
+      this.socket.emit('shootBullet', bulletData);
+
+  }
+
+  private checkCollision(bullet: Bullet) {
+    // Misalnya, Anda dapat memeriksa jarak antara peluru dan objek
+    // const target = this.scene.getObjectByName('npc'); // Nama objek target
+
+    // let collisionDetected = false;
+
+    // this.playerArr.forEach(x=>{
+
+    //   if (bullet.mesh.position.distanceTo(x.model.position) < 0.5) {
+    //     collisionDetected = x.id;
+    //     console.log(`Hit: ${x.name}`);
+    //   }
+    // })
+
+
+    // return collisionDetected;
+
+
+    if (bullet.mesh.position.distanceTo(this.MaincharacterPOS) < 0.5) {
+      return true;
+    }
+    return false;
+  }
+
+
+  updateBullet(){
+    this.bullets.forEach((bullet, index) => {
+      bullet.update();
+      // Hapus peluru jika keluar dari jangkauan tertentu
+      if (bullet.mesh.position.length() > 30) {
+        this.scene.remove(bullet.mesh);
+        this.bullets.splice(index, 1);
+      }
+
+      let cek = this.checkCollision(bullet);
+      if (cek) {
+        
+        
+        this.health =  this.rpgServ.onCharacterHit(this.health, this.demage);
+        // console.log('myHealt', this.health);
+        this.updatePlayerMovement();
+
+        // console.log(this.MainPlayerControl.barHealth);
+
+        // this.rpgServ.updateHealth(this.MainPlayerControl.barHealth, this.health);
+          
+        // Hapus peluru setelah tabrakan
+        this.scene.remove(bullet.mesh);
+        this.bullets.splice(index, 1);
+      }
+      
+    });
+
+
+  }
 
   private initJoystick(): void {
     const options = {
@@ -777,4 +950,22 @@ detectDirection(radian:any) {
 
 
 
+}
+
+
+class Bullet {
+  mesh: THREE.Mesh;
+  velocity: THREE.Vector3;
+
+  constructor(position: THREE.Vector3, direction: THREE.Vector3) {
+    const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.position.copy(position);
+    this.velocity = direction.multiplyScalar(0.8); // Kecepatan peluru
+  }
+
+  update(): void {
+    this.mesh.position.add(this.velocity);
+  }
 }

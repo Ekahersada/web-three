@@ -1,16 +1,28 @@
 
 
-<div class="bx z-10">
-    <div #joystickContainer class="joystick"></div>
+<div class="z-10">
+    <div class="bx z-10">
+        <div #joystickContainer class="joystick"></div>
+    
+        <div class="fire" mat-raised-button (click)="onShoot()">Shoot</div>
+    </div>
+    <div class="player-online z-10">
+        Online {{totalUser}}
+    </div>
+    
+    <div class="nme z-10 flex gap-3">
+        <button mat-raised-button (click)="openName()">Ganti Nama</button>
+        <!-- <button mat-raised-button (click)="onShoot()">SHOOT</button> -->
+    </div>
+    <div id="npc-character"></div>
+    
+    <div class="hud z-10">
+        <div class="health-bar">
+          <div class="health-bar-inner" [style.width.%]="health"></div>
+        </div>
+        <div class="hud-text">Health: {{ health }}%</div>
+      </div>
 </div>
-<div class="player-online z-10">
-    Online {{totalUser}}
-</div>
-
-<div class="nme z-10">
-    <button mat-raised-button (click)="openName()">Ganti Nama</button>
-</div>
-<div id="npc-character"></div>
 
 
 <canvas #canvas2></canvas>

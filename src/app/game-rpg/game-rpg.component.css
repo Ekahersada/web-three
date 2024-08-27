@@ -35,3 +35,38 @@
     top: 0;
     right: 0;
   }
+
+
+  .hud {
+    position: absolute;
+    top: 39px;
+    left: 7px;
+    color: white;
+    font-family: Arial, sans-serif;
+    pointer-events: none; /* Membuat HUD tidak mengganggu interaksi dengan scene 3D */
+  }
+  
+  .health-bar {
+    width: 200px;
+    height: 10px;
+    background-color: red;
+  }
+  
+  .health-bar-inner {
+    height: 100%;
+    background-color: green;
+  }
+
+  .fire{
+    left: 15px;
+    position: absolute;
+    top: -200px;
+    background: white;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    opacity: 0.3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
