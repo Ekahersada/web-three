@@ -87,7 +87,7 @@ export class GameRpgComponent implements OnInit {
     this.initThreeJS();
 
   
-    // this.openName();
+    this.openName();
 
     this.animate();
     this.initJoystick();
