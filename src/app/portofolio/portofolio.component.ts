@@ -3,6 +3,7 @@ import * as THREE from 'three';
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 
 @Component({
   selector: 'app-portofolio',
@@ -16,6 +17,7 @@ export class PortofolioComponent implements OnInit {
   private renderer: THREE.WebGLRenderer | undefined;
   private scene: THREE.Scene | undefined;
   private camera: THREE.PerspectiveCamera | undefined;
+  // private camera: THREE.OrthographicCamera | undefined;
 
   constructor() { }
 
@@ -39,6 +41,10 @@ export class PortofolioComponent implements OnInit {
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.z = 5;
 
+    // const aspect = window.innerWidth / window.innerHeight;
+    // this.camera = new THREE.OrthographicCamera(-aspect * 10, aspect * 10, 10, -10, 0.1, 1000);
+    // this.camera.position.z = 1;
+
     const geometry = new THREE.SphereGeometry(1, 32, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
     this.sphere = new THREE.Mesh(geometry, material);
@@ -46,6 +52,46 @@ export class PortofolioComponent implements OnInit {
 
     this.animate();
     this.onWindowResize();
+    this.loadAssets();
+  }
+
+
+  loadAssets(){
+    const loader = new SVGLoader();
+
+    loader.load('./assets/textures/SVG/cloud_01.svg',(data)=>{
+      const paths = data.paths;
+		  const group = new THREE.Group();
+
+      for ( let i = 0; i < paths.length; i ++ ) {
+
+        const path = paths[ i ];
+  
+        const material = new THREE.MeshBasicMaterial( {
+          color: path.color,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        } );
+  
+        const shapes = SVGLoader.createShapes( path );
+  
+        for ( let j = 0; j < shapes.length; j ++ ) {
+  
+          const shape = shapes[ j ];
+          const geometry = new THREE.ShapeGeometry( shape );
+          const mesh = new THREE.Mesh( geometry, material );
+          group.add( mesh );
+  
+        }
+
+      }
+
+      this.scene!.add(group);
+
+      console.log(group);
+    }, (xhr)=>{
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    })
   }
 
 
