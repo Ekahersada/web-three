@@ -26,10 +26,13 @@ export class PortofolioComponent implements OnInit {
     this.animateSections();
   }
 
+
+
+
   private initThreeJS(): void {
     const container = document.getElementById('three-canvas-container')!;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(window.innerWidth - 29, window.innerHeight);
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -42,6 +45,18 @@ export class PortofolioComponent implements OnInit {
     this.scene.add(this.sphere);
 
     this.animate();
+    this.onWindowResize();
+  }
+
+
+  onWindowResize(){
+    window.addEventListener('resize', ()=>{
+    this.renderer!.setSize( window.innerWidth, window.innerHeight );
+    this.camera!.aspect = window.innerWidth / window.innerHeight;
+    this.camera!.updateProjectionMatrix();
+
+    
+    })
   }
 
   private animate(): void {
@@ -57,13 +72,17 @@ export class PortofolioComponent implements OnInit {
   private animateSections(): void {
     gsap.from(".welcome-section h1", { opacity: 0, y: -50, duration: 1.5 });
 
-    gsap.from(".about-section", {
+    gsap.from(".data-about", {
       opacity: 0,
       y: 100,
-      duration: 1,
+      // duration: 1,
+      stagger:1,
+      ease: 'power2.out',
       scrollTrigger: {
+        // markers:true,
         trigger: ".about-section",
         start: "top 80%",
+        scrub:3
       }
     });
 

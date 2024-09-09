@@ -201,7 +201,35 @@ export class GameShootComponent implements OnInit {
         }
      });
 
+
+         // Mouse click event listener
+         window.addEventListener('mousemove', (event)=>{
+                this.onMouseMove(event);
+         }, false);
+
   }
+
+
+  onMouseMove(event:any) {
+    event.preventDefault();
+
+    // Get the image element
+    const imageElement = document.getElementById('crosshair');
+
+    // Get the position of the image element on the screen
+    const imageRect = imageElement!.getBoundingClientRect();
+    const imageCenterX = imageRect.left + imageRect.width / 2;
+    const imageCenterY = imageRect.top + imageRect.height / 2;
+
+    // Calculate the normalized device coordinates (-1 to 1) from the image center
+    const mouse = new THREE.Vector2();
+    mouse.x = (imageCenterX / window.innerWidth) * 2 - 1;
+    mouse.y = -(imageCenterY / window.innerHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(mouse, this.camera);
+
+
+}
 
 
 
@@ -248,8 +276,26 @@ export class GameShootComponent implements OnInit {
 
     this.onFire();
 
+           //face bullet holes
+    this.faceBulletHolesToCamera()
+
     this.renderer.render(this.scene, this.camera);
   }
+
+
+  faceBulletHolesToCamera() {
+    this.bulletHoles.forEach((bulletHole)=>{
+        // Calculate the direction from the bullet hole to the camera
+        var direction = this.camera.position.clone().sub(bulletHole.position).normalize();
+
+        // Calculate the rotation quaternion that faces the camera
+        var quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+
+        // Apply the rotation to the bullet hole
+        bulletHole.setRotationFromQuaternion(quaternion);
+    });
+}
+
 
   onFire(){
       if (this.isFiring) {
