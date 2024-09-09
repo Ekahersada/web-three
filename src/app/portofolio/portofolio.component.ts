@@ -63,6 +63,9 @@ export class PortofolioComponent implements OnInit {
     requestAnimationFrame(() => this.animate());
     if (this.sphere) {
       // You can add additional animations here
+
+      this.sphere.rotation.y -= 10;
+
     }
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
