@@ -469,14 +469,14 @@ activeKeys.forEach((key:any)=>{
 
 
      // Create map object (cube as wall or obstacle)
-     const mapGeometry = new THREE.BoxGeometry(5, 5, 1);
-     const mapMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-     const wall = new THREE.Mesh(mapGeometry, mapMaterial);
-     wall.position.set(0, 0, -5);  // Position the wall in front of the character
-     this.scene.add(wall);
-     this.wallAbadon = wall;
+    //  const mapGeometry = new THREE.BoxGeometry(5, 5, 1);
+    //  const mapMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    //  const wall = new THREE.Mesh(mapGeometry, mapMaterial);
+    //  wall.position.set(0, 0, -5);  // Position the wall in front of the character
+    //  this.scene.add(wall);
+    //  this.wallAbadon = wall;
 
-    this.wall = new THREE.Box3().setFromObject(wall);
+    // this.wall = new THREE.Box3().setFromObject(wall);
 
     console.log(this.wall)
 
