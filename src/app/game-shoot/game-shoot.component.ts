@@ -772,11 +772,13 @@ moveControl(){
         new THREE.Vector3(position.x + 0.5, position.y + 0.5, position.z + 0.5)
       );
 
+      if(this.wall){
+          if (this.myChar.intersectsBox(this.wall)) {
+              console.log('tabrakan');
+              return true;
+          } 
 
-    if (this.myChar.intersectsBox(this.wall)) {
-        console.log('tabrakan');
-        return true;
-    } 
+      }
 
     if (
         position.x < -halfGridSize + margin ||
