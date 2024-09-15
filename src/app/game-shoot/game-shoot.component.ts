@@ -256,7 +256,12 @@ activeKeys.forEach((key:any)=>{
 
   this.controls =  new PointerLockControls(this.camera, document.body);
 
+
+
+
     this.controls.addEventListener('lock', function () {
+
+        
         // instructions.style.display = 'none';
         // blocker.style.display = 'none';
         // document.getElementById('crosshair').style.display = 'block'; // Show the crosshair when screen is locked
