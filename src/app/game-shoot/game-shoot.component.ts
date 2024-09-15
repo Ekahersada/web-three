@@ -1,7 +1,11 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
 import * as io from 'socket.io-client';
+// import * as dat from 'dat.gui';
+import { GUI } from 'dat.gui';
 import { OrbitControls, GLTFLoader, PointerLockControls  } from 'three/examples/jsm/Addons.js'
+import nipplejs from 'nipplejs';
+
 
 @Component({
   selector: 'app-game-shoot',
@@ -11,6 +15,7 @@ import { OrbitControls, GLTFLoader, PointerLockControls  } from 'three/examples/
 export class GameShootComponent implements OnInit {
 
   @ViewChild('rendererContainer2', { static: true }) rendererContainer!: ElementRef;
+  @ViewChild('joystickContainer', { static: true }) joystickContainer!: ElementRef;
 
 
 
@@ -49,7 +54,24 @@ export class GameShootComponent implements OnInit {
     moveLeft = false;
     moveRight = false;
 
+    private keypress:any = {
+        a:false,
+        s:false,
+        d:false,
+        w:false
+      }
+  isMoving: boolean = false;
+
+
     tommyGunLight:any;
+
+    loader = new GLTFLoader();
+
+    myChar:any;
+
+    wall:any;
+    wallAbadon:any;
+    private joystick: any;
 
 
 
@@ -59,8 +81,110 @@ export class GameShootComponent implements OnInit {
 
     this.initScene();
     this.animate();
+    this.initJoystick();
+    
+
+
     
   }
+
+  initGUI(){
+    const datGui  = new GUI();
+    datGui.domElement.id = 'gui' 
+
+    let gui = datGui.addFolder(`Position`);
+
+    const modelPosition = {
+        x: this.abandonedBuilding.position.x,
+        y: this.abandonedBuilding.position.y,
+        z: this.abandonedBuilding.position.z
+      };
+
+
+      // Create controls for the x, y, and z position
+      gui.add(modelPosition, 'x', -10, 10).onChange((value:any) => {
+        this.abandonedBuilding.position.x = value;
+      });
+      gui.add(modelPosition, 'y', -10, 10).onChange((value:any) => {
+        this.abandonedBuilding.position.y = value;
+      });
+      gui.add(modelPosition, 'z', -10, 10).onChange((value:any) => {
+        this.abandonedBuilding.position.z = value;
+      });
+
+      gui.open();
+
+  }
+
+  private initJoystick(): void {
+    const options = {
+      zone: this.joystickContainer.nativeElement,
+      color: 'blue',
+      size: 100,
+      position: { left: '50%', top: '50%' },
+      lockX: false,
+      lockY: false,
+    };
+
+    this.joystick = nipplejs.create(options);
+
+    this.joystick.on('move', (event: any, data: any) => {
+
+
+      var vector = data.vector;
+      var activeKeys = [];
+
+      // Threshold untuk mendeteksi apakah gerakan lebih dominan di satu arah
+      var threshold = 0.5;
+
+      if (Math.abs(vector.x) > Math.abs(vector.y) * threshold) {
+          // Gerakan lebih dominan ke arah horizontal
+          if (vector.x < 0) {
+              activeKeys.push('a'); // Kiri
+          } else if (vector.x > 0) {
+              activeKeys.push('d'); // Kanan
+              
+          }
+      }
+
+      if (Math.abs(vector.y) > Math.abs(vector.x) * threshold) {
+          // Gerakan lebih dominan ke arah vertikal
+          if (vector.y < 0) {
+            activeKeys.push('s'); // Bawah
+          } else if (vector.y > 0) {
+            activeKeys.push('w'); // Atas
+          }
+      }
+
+        // console.log(vector);
+        this.updateDirectionStatus(activeKeys);
+    });
+
+    this.joystick.on('end', (event:any) =>{
+      // this.triggerAction(null);
+
+      this.updateDirectionStatus([]);
+
+    });
+  }
+
+  updateDirectionStatus(activeKeys:any) {
+    // console.log(activeKeys);
+
+      // Reset semua status ke false
+  for (var key in this.keypress) {
+    this.keypress[key] = false;
+    this.isMoving = false;
+
+}
+// Set arah yang aktif ke true
+activeKeys.forEach((key:any)=>{
+    this.keypress[key] = true;
+    this.isMoving = true;
+});
+
+  }
+
 
   initScene(){
 
@@ -75,7 +199,7 @@ export class GameShootComponent implements OnInit {
 
 
     // Create a grid
-    var gridHelper = new THREE.GridHelper(20, 20);
+    var gridHelper = new THREE.GridHelper(40, 40);
     this.scene.add(gridHelper);
 
 
@@ -86,6 +210,11 @@ export class GameShootComponent implements OnInit {
     // Adjust the camera's near clipping plane value
     this.camera.near = .015; // Set a smaller value, like 0.1
     this.camera.updateProjectionMatrix();
+
+
+
+
+
 
 
     ///flashing light // Create a point light
@@ -102,6 +231,8 @@ export class GameShootComponent implements OnInit {
    
 
     this.loadModel();
+
+    this.generateFloor();
 
     // Controller
     document.addEventListener('keydown',(event) => {
@@ -139,7 +270,70 @@ export class GameShootComponent implements OnInit {
 
     this.scene.add(this.controls.getObject());
 
+    // this.myChar = new THREE.Box3().setFromObject(this.controls.camera);
+
+
+    // Create bounding box for the player (character is represented by the camera)
+   
+
   }
+
+
+  generateFloor(){
+
+         //Add LIGHT
+         this.scene.add(new THREE.AmbientLight(0xffffff, 0.7))
+         const dirLight = new THREE.DirectionalLight(0xffffff, 1)
+         dirLight.position.set(- 60, 100, - 10);
+         dirLight.castShadow = true;
+         dirLight.shadow.camera.top = 50;
+         dirLight.shadow.camera.bottom = - 50;
+         dirLight.shadow.camera.left = - 50;
+         dirLight.shadow.camera.right = 50;
+         dirLight.shadow.camera.near = 0.1;
+         dirLight.shadow.camera.far = 200;
+         dirLight.shadow.mapSize.width = 4096;
+         dirLight.shadow.mapSize.height = 4096;
+         this.scene.add(dirLight);
+
+
+    // TEXTURES
+    const textureLoader = new THREE.TextureLoader();
+    const placeholder = textureLoader.load("./assets/textures/placeholder/placeholder.png");
+    const sandBaseColor = textureLoader.load("./assets/textures/sand/Sand 002_COLOR.jpg");
+    const sandNormalMap = textureLoader.load("./assets/textures/sand/Sand 002_NRM.jpg");
+    const sandHeightMap = textureLoader.load("./assets/textures/sand/Sand 002_DISP.jpg");
+    const sandAmbientOcclusion = textureLoader.load("./assets/textures/sand/Sand 002_OCC.jpg");
+
+    const WIDTH = 80
+    const LENGTH = 80
+
+    const geometry = new THREE.PlaneGeometry(WIDTH, LENGTH, 512, 512);
+    const material = new THREE.MeshStandardMaterial(
+        {
+            map: sandBaseColor, normalMap: sandNormalMap,
+            displacementMap: sandHeightMap, displacementScale: 0.1,
+            aoMap: sandAmbientOcclusion
+        })
+    this.wrapAndRepeatTexture(material.map!)
+    this.wrapAndRepeatTexture(material.normalMap!)
+    this.wrapAndRepeatTexture(material.displacementMap!)
+    this.wrapAndRepeatTexture(material.aoMap!)
+    // const material = new THREE.MeshPhongMaterial({ map: placeholder})
+
+    const floor = new THREE.Mesh(geometry, material)
+    floor.receiveShadow = true
+    floor.rotation.x = - Math.PI / 2
+    this.scene.add(floor)
+ }
+
+ wrapAndRepeatTexture(map: THREE.Texture){
+   map.wrapS = map.wrapT = THREE.RepeatWrapping
+   map.repeat.x = map.repeat.y = 10;
+
+   return map;
+ }
+
 
   onKeyDown(event:any){
     switch (event.keyCode) {
@@ -252,6 +446,43 @@ export class GameShootComponent implements OnInit {
     })
 
 
+    // Load building model
+    this.loader.load(
+    // './assets/models/low_poly_abandoned_brick_room.glb',
+    './assets/models/map_cod.glb',
+    (gltf)=> {
+        this.abandonedBuilding = gltf.scene;
+        this.abandonedBuilding.position.y = 0.8;
+        // this.abandonedBuilding.position.z = 4;
+        console.log(this.abandonedBuilding);
+        this.scene.add(this.abandonedBuilding);
+
+        // this.initGUI();
+    });
+
+
+    this.myChar = new THREE.Box3(
+        new THREE.Vector3(this.camera.position.x - 0.5, this.camera.position.y - 1.8, this.camera.position.z - 0.5),
+        new THREE.Vector3(this.camera.position.x + 0.5, this.camera.position.y + 0.5, this.camera.position.z + 0.5)
+      );
+
+
+
+     // Create map object (cube as wall or obstacle)
+     const mapGeometry = new THREE.BoxGeometry(5, 5, 1);
+     const mapMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+     const wall = new THREE.Mesh(mapGeometry, mapMaterial);
+     wall.position.set(0, 0, -5);  // Position the wall in front of the character
+     this.scene.add(wall);
+     this.wallAbadon = wall;
+
+    this.wall = new THREE.Box3().setFromObject(wall);
+
+    console.log(this.wall)
+
+
+
+
   }
 
   animate(){
@@ -260,6 +491,11 @@ export class GameShootComponent implements OnInit {
     this.moveControl();
       // Update bullets
       this.updateBullets();
+
+      this.myChar.setFromObject(this.controls.camera);
+
+
+    //   console.log(this.myChar);
 
       if (this.tommyGun) {
 
@@ -274,7 +510,12 @@ export class GameShootComponent implements OnInit {
 
     }
 
-    this.onFire();
+  
+
+
+    
+
+    // this.onFire();
 
            //face bullet holes
     this.faceBulletHolesToCamera()
@@ -298,7 +539,7 @@ export class GameShootComponent implements OnInit {
 
 
   onFire(){
-      if (this.isFiring) {
+    //   if (this.isFiring) {
 
         const currentTime = performance.now();
 
@@ -313,8 +554,9 @@ export class GameShootComponent implements OnInit {
             //use it as bullet particle start point
             let finLowObject = null;
             this.tommyGun.traverse(function (object:any) {
+                // console.log(object.name);
                 if (object.name === 'barrel_low') {
-                    console.log(object.name);
+                    // console.log(object.name);
                     finLowObject = object;
                 }
             });
@@ -323,19 +565,19 @@ export class GameShootComponent implements OnInit {
             finLowObject!.getWorldPosition(worldPosition);
 
             this.createBullet(worldPosition, direction);
-            this.updateGunMuzzleFlash(worldPosition);
+            // this.updateGunMuzzleFlash(worldPosition);
 
         }
 
         //check bullet collision
-        // this.checkBulletCollision();
+        this.checkBulletCollision();
 
 
-    }
+    // }
   }
 
   checkBulletCollision() {
-    this.bullets.forEach((bullet:any)=>{
+    this.bullets.forEach((bullet:any, index:any)=>{
         var bulletPosition = bullet.position;
         var bulletDirection = bullet.direction; // Assuming each bullet has a direction property
 
@@ -344,9 +586,14 @@ export class GameShootComponent implements OnInit {
 
         // Find intersections between the ray and the abandonedBuilding object
         let abadon = this.abandonedBuilding;
+        // let abadon = this.wallAbadon;
         var intersects = raycaster.intersectObject(abadon, true);
 
         if (intersects.length > 0) {
+
+
+             // Remove bullet from scene and array
+          
 
             // Play the bullet ricochet sound every 5 bullets
             if (this.bulletCount % 15 === 0) {
@@ -358,13 +605,16 @@ export class GameShootComponent implements OnInit {
             var point = intersect.point;
             var faceNormal = intersect.face!.normal;
 
+
+            // console.log(faceNormal);
+
             // Create and position the mesh at the intersection point
             var offset = new THREE.Vector3(0, 0, 0.01); // Increase the offset value to avoid z-fighting
             var insertionOffset = new THREE.Vector3(0, 0.01, 0); // Adjust the insertion offset as needed
 
             var loader = new THREE.TextureLoader();
             var material = new THREE.MeshBasicMaterial({
-                map: loader.load('https://www.shanebrumback.com/images/bullet-hole.png'),
+                map: loader.load('./assets/textures/placeholder/bullet-hole.png'),
                 side: THREE.DoubleSide,
                 transparent: true,
                 depthWrite: true,
@@ -378,6 +628,11 @@ export class GameShootComponent implements OnInit {
             bulletHoleMesh.position.copy(insertionPoint);
             this.scene.add(bulletHoleMesh);
             this.bulletHoles.push(bulletHoleMesh);
+
+
+            //Delete bullet if collision
+            this.scene.remove(bullet);
+            this.bullets.splice(index, 1);
 
 
             // Fade out the mesh gradually over time
@@ -396,6 +651,13 @@ export class GameShootComponent implements OnInit {
                 bulletHoleMesh.material.opacity = opacity;
             }, fadeOutInterval);
         }
+
+
+          // Optional: remove bullet if it goes too far
+     if (bullet.position.distanceTo(this.camera.position) > 50) {
+        this.scene.remove(bullet);
+        this.bullets.splice(index, 1);
+      }
     });
 }
 
@@ -421,12 +683,12 @@ toggleLight(isFiring:any) {
     //play machine gun sound bite
     // playMachineGunSound();
 
-    console.log('fireeeeee............')
+    // console.log('fireeeeee............')
 
     const bulletGeometry = new THREE.SphereGeometry(0.01, 8, 8);
     const bulletMaterial = new THREE.MeshBasicMaterial({
-        color: 0xFFFFFF,
-        transparent: true,
+        color: 0xff0000,
+        transparent: false,
         opacity: 0.5
     });
     const bullet:any = new THREE.Mesh(bulletGeometry, bulletMaterial);
@@ -435,12 +697,14 @@ toggleLight(isFiring:any) {
     bullet.distanceTraveled = 0;
 
     // Add a point light to the bullet
-    const pointLight = new THREE.PointLight(0xFFFFFF, 10, 100);
-    pointLight.position.copy(position);
-    bullet.add(pointLight);
+    // const pointLight = new THREE.PointLight(0xFFFFFF, 10, 100);
+    // pointLight.position.copy(position);
+    // bullet.add(pointLight);
 
     this.scene.add(bullet);
     this.bullets.push(bullet);
+
+   
 }
 
 
@@ -451,7 +715,7 @@ updateBullets() {
 
     for (let i = this.bullets.length - 1; i >= 0; i--) {
         const bullet:any = this.bullets[i];
-        bullet?.position.addScaledVector(bullet?.direction, .75); // Adjust the speed of the bullet here
+        bullet?.position.addScaledVector(bullet?.direction, .80); // Adjust the speed of the bullet here
         bullet.distanceTraveled! += 0.4;
 
         if (bullet?.distanceTraveled >= maxDistance) {
@@ -499,9 +763,20 @@ moveControl(){
 
 
   checkCollision(position:any) {
-    var gridSize = 20;
+    var gridSize = 40;
     var halfGridSize = gridSize / 2;
     var margin = 0.1;
+
+    this.myChar.set(
+        new THREE.Vector3(position.x - 0.5, position.y - 1.8, position.z - 0.5),
+        new THREE.Vector3(position.x + 0.5, position.y + 0.5, position.z + 0.5)
+      );
+
+
+    if (this.myChar.intersectsBox(this.wall)) {
+        console.log('tabrakan');
+        return true;
+    } 
 
     if (
         position.x < -halfGridSize + margin ||

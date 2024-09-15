@@ -1,3 +1,17 @@
 <div id="crosshair" class="crosshair z-10"></div>
+<div class="fixed top-0 z-[10000]" id="gui"></div>
+<div class="absolute top-0 left-0 z-20 bg-white" >
+    x : {{controls.camera.position.x}},<br>
+    z : {{controls.camera.position.z}},
+</div>
 <!-- <img id="crosshair" src="https://www.shanebrumback.com/images/reticle.png" alt="Crosshair"> -->
+
+<div #joystickContainer class="joystick grid place-items-center">
+   <span class="opacity-50">MOVE</span>
+</div>
+
+<div class="box-fire grid place-items-center" (click)="onFire()">
+    <span class="opacity-50">FIRE</span>
+</div>
+
 <div #rendererContainer2 class="renderer-container"></div>

@@ -18,6 +18,28 @@
     pointer-events: none; 
   }
 
+  .joystick{
+    bottom: 66px;
+    left: 18px;
+    position: absolute !important;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.149);
+    border-radius: 50%;
+    z-index: 1000;
+  }
+
+  .box-fire{
+    bottom: 66px;
+    right: 47px;
+    position: absolute !important;
+    width: 90px;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.149);
+    border-radius: 50%;
+    z-index: 1000;
+  }
+
   /* #crosshair {
     position: fixed;
     top: 50%;
