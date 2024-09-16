@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import * as io from 'socket.io-client';
 // import * as dat from 'dat.gui';
 import { GUI } from 'dat.gui';
-import { OrbitControls, GLTFLoader, PointerLockControls  } from 'three/examples/jsm/Addons.js'
+import { OrbitControls, GLTFLoader, PointerLockControls, FirstPersonControls  } from 'three/examples/jsm/Addons.js'
 import nipplejs from 'nipplejs';
 
 
@@ -262,6 +262,7 @@ activeKeys.forEach((key:any)=>{
 
 
   this.controls =  new PointerLockControls(this.camera, document.body);
+  // this.controls = new FirstPersonControls(this.camera, document.body);
 
 
 
