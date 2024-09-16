@@ -49,10 +49,11 @@ export class GameShootComponent implements OnInit {
 
 
     // Keyboard controls
-    moveForward = false;
-    moveBackward = false;
-    moveLeft = false;
-    moveRight = false;
+    moveForward = false; //w
+    moveBackward = false; //s
+    moveLeft = false; //a
+    moveRight = false; //d
+    moveUp = false;
 
     private keypress:any = {
         a:false,
@@ -72,6 +73,10 @@ export class GameShootComponent implements OnInit {
     wall:any;
     wallAbadon:any;
     private joystick: any;
+  isTouching: boolean = false;;
+  touchX: number = 0;
+  touchY: number = 0;
+  private groundLevel = 0; // 
 
 
 
@@ -254,6 +259,8 @@ activeKeys.forEach((key:any)=>{
   this.controls.lock()
  });
 
+
+
   this.controls =  new PointerLockControls(this.camera, document.body);
 
 
@@ -279,8 +286,46 @@ activeKeys.forEach((key:any)=>{
 
 
     // Create bounding box for the player (character is represented by the camera)
+
+    // Set ground level (y-position) for camera
+    this.groundLevel = 1; // Example: camera is at 1.6 meters above the ground
+
+    this.initTouchControls();
    
 
+  }
+
+
+   // Initialize touch controls for mobile
+   initTouchControls() {
+    const element = this.renderer.domElement;
+
+    element.addEventListener('touchstart', (event) => {
+      this.isTouching = true;
+      this.touchX = event.touches[0].clientX;
+      this.touchY = event.touches[0].clientY;
+    });
+
+    element.addEventListener('touchmove', (event) => {
+      if (this.isTouching) {
+        const deltaX = event.touches[0].clientX - this.touchX;
+        const deltaY = event.touches[0].clientY - this.touchY;
+
+        // Adjust camera rotation based on touch movement
+        this.controls.getObject().rotation.y -= deltaX * 0.002; // Horizontal rotation (yaw)
+        this.controls.getObject().rotation.x -= deltaY * 0.002; // Vertical rotation (pitch)
+
+        // Clamp vertical rotation to avoid flipping
+        this.controls.getObject().rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.controls.getObject().rotation.x));
+
+        this.touchX = event.touches[0].clientX;
+        this.touchY = event.touches[0].clientY;
+      }
+    });
+
+    element.addEventListener('touchend', () => {
+      this.isTouching = false;
+    });
   }
 
 
@@ -341,43 +386,66 @@ activeKeys.forEach((key:any)=>{
 
 
   onKeyDown(event:any){
+
+    console.log(event.keyCode);
     switch (event.keyCode) {
+        case 32:
+          this.moveUp = true;
+        break;
         case 38: // up arrow
         case 87: // W key
-            this.moveForward = true;
+            // this.moveForward = true;
+            this.keypress.w = true;
             break;
         case 37: // left arrow
         case 65: // A key
-            this.moveLeft = true;
+            // this.moveLeft = true;
+            this.keypress.a = true;
+
             break;
         case 40: // down arrow
         case 83: // S key
-            this.moveBackward = true;
+            // this.moveBackward = true;
+            this.keypress.s = true;
+
             break;
         case 39: // right arrow
         case 68: // D key
-            this.moveRight = true;
+            // this.moveRight = true;
+            this.keypress.d = true;
+
             break;
     }
   }
 
   onKeyUp(event:any){
     switch (event.keyCode) {
+      case 32:
+        this.moveUp = false;
+      break;
       case 38: // up arrow
       case 87: // W key
           this.moveForward = false;
+          this.keypress.w = false;
+
           break;
       case 37: // left arrow
       case 65: // A key
           this.moveLeft = false;
+          this.keypress.a = false;
+
           break;
       case 40: // down arrow
       case 83: // S key
           this.moveBackward = false;
+          this.keypress.s = false;
+
           break;
       case 39: // right arrow
       case 68: // D key
           this.moveRight = false;
+          this.keypress.d = false;
+
           break;
   }
   }
@@ -518,7 +586,8 @@ activeKeys.forEach((key:any)=>{
   
 
 
-    
+    // Ensure the camera remains at the ground level (Y position)
+    this.controls.getObject().position.y = this.groundLevel;
 
     // this.onFire();
 
@@ -732,38 +801,43 @@ updateBullets() {
 
 moveControl(){
    //ramp up player movement speed and direction
-   if (this.controls.isLocked) {
+  //  if (this.controls.isLocked) {
     var acceleration = 0.003; // Speed increment per frame
     var maxSpeed = 0.10; // Maximum speed
 
-    if (this.moveForward) {
+    // console.log(this.controls);
+
+    if (this.keypress.w) {
         this.controls.speed = Math.min(this.controls.speed + acceleration, maxSpeed);
         this.controls.moveForward(this.controls.speed);
         if (this.checkCollision(this.controls.getObject().position)) {
             this.controls.moveForward(-this.controls.speed); // Move back to the previous position
         }
-    } else if (this.moveBackward) {
+    } else if (this.keypress.s) {
         this.controls.speed = Math.min(this.controls.speed + acceleration, maxSpeed);
         this.controls.moveForward(-this.controls.speed);
         if (this.checkCollision(this.controls.getObject().position)) {
             this.controls.moveForward(this.controls.speed); // Move back to the previous position
         }
-    } else if (this.moveLeft) {
+    } else if (this.keypress.a) {
         this.controls.speed = Math.min(this.controls.speed + acceleration, maxSpeed);
         this.controls.moveRight(-this.controls.speed);
         if (this.checkCollision(this.controls.getObject().position)) {
             this.controls.moveRight(this.controls.speed); // Move back to the previous position
         }
-    } else if (this.moveRight) {
+    } else if (this.keypress.d) {
         this.controls.speed = Math.min(this.controls.speed + acceleration, maxSpeed);
         this.controls.moveRight(this.controls.speed);
         if (this.checkCollision(this.controls.getObject().position)) {
             this.controls.moveRight(-this.controls.speed); // Move back to the previous position
         }
-    } else {
+    } else if (this.moveUp) {
+      this.controls.speed = Math.min(this.controls.speed + acceleration, maxSpeed);
+      this.controls.moveUp(this.controls.speed);
+    }else {
         this.controls.speed = 0; // Reset speed when no movement controls are active
     }
-}
+// }
 }
 
 
