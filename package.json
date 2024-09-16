@@ -21,6 +21,8 @@
     "@angular/platform-browser": "^18.0.0",
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
+    "ammo.js": "^0.0.10",
+    "ammojs3": "^0.0.11",
     "dat.gui": "^0.7.9",
     "gsap": "^3.12.5",
     "nipplejs": "^0.10.2",
