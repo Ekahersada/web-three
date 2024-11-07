@@ -435,7 +435,6 @@ ground.receiveShadow = true;
   }
 
 
-
   private initJoystick(): void {
     const options = {
       zone: this.joystickContainer.nativeElement,

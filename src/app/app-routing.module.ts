@@ -10,7 +10,8 @@ const routes: Routes = [
   {path:'game-2d',  loadChildren: () => import("./game2D/game2D.module").then(m => m.Game2DModule)},
   {path:'game-fps',  loadChildren: () => import("./game-fps/game-fps.module").then(m => m.GameFpsModule)},
   {path:'game-fps2',  loadChildren: () => import("./game-shoot/game-shoot.module").then(m => m.GameShootModule)},
-  {path:'game-test',  loadChildren: () => import("./game-test/game-test.module").then(m => m.GameTestModule)}
+  {path:'game-test',  loadChildren: () => import("./game-test/game-test.module").then(m => m.GameTestModule)},
+  {path:'game-new',  loadChildren: () => import("./game-new-rpg/game-new-rpg.module").then(m => m.GameNewRpgModule)},
 ];
 
 @NgModule({
