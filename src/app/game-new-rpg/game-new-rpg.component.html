@@ -1,2 +1,19 @@
 <div #container class="sections"></div>
+<div id="message">
+    <p id="message_text"></p>
+    <button id="message_ok">OK</button>
+</div>
+<div id="overlay"></div>
+<button id="sfx-btn"><i class="fas fa-volume-up"></i></button>
+<button id="camera-btn" (click)="switchCamera()"><i class="fas fa-camera"></i></button>
+<button id="action-btn" (click)="contextAction()"><i class="fas fa-hand-point-up"></i></button>
+<button id="briefcase-btn" (click)="toggleBriefcase()"><i class="fas fa-briefcase"></i></button>
+<div id="briefcase">
+    <ul>
+        <li>Cari Kunci yang hilang ditempat ini.</li>
+        <li><a href="#"><img></a></li>
+        <li><a href="#"><img></a></li>
+        <li><a href="#"><img></a></li>
+    </ul>
+</div>
 <div #rendererContainer2 class="renderer-container"></div>

@@ -63,7 +63,7 @@ export class JoyStick {
         let left = mouse.x - this.offset!.x;
         let top = mouse.y - this.offset!.y;
 
-        console.log(left, top);
+        // console.log(left, top);
 
         const sqMag = left * left + top * top;
         if (sqMag > this.maxRadiusSquared) {

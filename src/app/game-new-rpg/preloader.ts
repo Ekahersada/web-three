@@ -31,17 +31,17 @@ export class PreloaderInit {
         }
         this.container = options.container;
 
-
-
-        if (options.onprogress === undefined) {
-            this.onprogress = this.defaultOnProgress;
-            this.createProgressBar();
-
-            console.log('undefined');
-        } else {
-            this.onprogress = options.onprogress;
-
-        }
+        // if (options.onprogress == undefined) {
+        //     this.createProgressBar();
+            
+        //     // console.log('undefined');
+        // } else {
+        //     this.onprogress = options.onprogress;
+            
+            
+        // }
+        this.onprogress = this.defaultOnProgress;
+        this.createProgressBar();
 
         this.oncomplete = options.oncomplete || (() => {
 
@@ -62,6 +62,7 @@ export class PreloaderInit {
         this.domElement.style.alignItems = 'center';
         this.domElement.style.justifyContent = 'center';
         this.domElement.style.zIndex = '1111';
+        this.domElement.id = 'progressbar';
 
         const barBase = document.createElement("div");
         barBase.style.background = '#aaa';
@@ -80,16 +81,13 @@ export class PreloaderInit {
 
         this.progressBar = bar;
 
-        if (this.container == undefined) {
-            document.body.appendChild(this.domElement);
-        } else {
-            this.container.appendChild(this.domElement);
-        }
-        // document.body.appendChild(this.domElement);
+
+        // this.container!.appendChild(this.domElement);
+        document.body.appendChild(this.domElement);
 
         
 
-        console.log(this.container)
+        // console.log(this.container)
       
     }
 
@@ -138,11 +136,11 @@ export class PreloaderInit {
                 if (loader.checkCompleted()) {
 
                     if (loader.domElement !== undefined) {
-                        if (loader.container !== undefined) {
-                            loader.container.removeChild(loader.domElement);
-                        } else {
-                            document.body.removeChild(loader.domElement);
-                        }
+                        // if (loader.container !== undefined) {
+                        //     loader.container.removeChild(loader.domElement);
+                        // } else {
+                        // }
+                        document.body.removeChild(loader.domElement);
                     }
                     loader.oncomplete();
                 }

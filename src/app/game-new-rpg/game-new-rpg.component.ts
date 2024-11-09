@@ -4,6 +4,7 @@ import { OrbitControls, GLTFLoader, PointerLockControls, FBXLoader  } from 'thre
 import { PreloaderInit, PreloaderOptions } from './preloader';
 import { JoyStick } from './joystick';
 import { SFX } from './sfx';
+import { Tween } from './tween';
 
 @Component({
   selector: 'app-game-new-rpg',
@@ -51,6 +52,11 @@ export class GameNewRpgComponent implements OnInit {
     `${this.assetsPath}fbx/girl-walk.fbx`,
     `${this.assetsPath}fbx/usb.fbx`,
   ];
+  fans: any[]=[];
+  actionBtn:any;
+  doors: any;
+  onAction: any;
+  collected: any[] = [];
 
   constructor() { }
 
@@ -60,6 +66,8 @@ export class GameNewRpgComponent implements OnInit {
     
 
     this.anims.map(anim => this.assets.push(`assets/lotus/fbx/${anim}.fbx`));
+
+    this.actionBtn = document.getElementById("action-btn");
    
 
     const preloaderOptions: PreloaderOptions = {
@@ -84,6 +92,8 @@ export class GameNewRpgComponent implements OnInit {
     requestAnimationFrame(() => this.runAnimate());
 
     if (this.tweens.length>0){
+
+  
 			this.tweens.forEach((tween:any)=>{ tween.update(dt); });	
 		}
 		
@@ -113,7 +123,47 @@ export class GameNewRpgComponent implements OnInit {
 			this.camera.lookAt(pos);
 		}
 
-    this.renderer.render(this.scene, this.camera);
+
+    this.actionBtn.style = 'display:none;';
+		let trigger = false;
+		
+		if (this.doors !== undefined){
+			this.doors.forEach((door:any)=>{
+				if (this.player.object.position.distanceTo(door.trigger.position)<100){
+					this.actionBtn.style = 'display:block;';
+					this.onAction = { action:'push-button', mode:'open-doors', index:0 };
+					trigger = true;
+				}
+			});
+		}
+        
+        if (this.collect !== undefined && !trigger){
+
+            this.collect.forEach((object:any)=>{
+				if (object.visible && this.player.object.position.distanceTo(object.position)<100){
+					this.actionBtn.style = 'display:block;';
+					this.onAction = { action:'gather-objects', mode:'collect', index:0, src:"assets/lotus/usb.jpg" };
+					trigger = true;
+				}
+			});
+        }
+		
+		if (!trigger) delete this.onAction;
+		
+		if (this.fans !== undefined){
+            let vol = 0;
+            this.fans.forEach((fan:any)=>{
+                const dist = fan.position.distanceTo(this.player.object.position);
+                const tmpVol = 1 - dist/1000;
+                if (tmpVol>vol) vol = tmpVol;
+                fan.rotateZ(dt); 
+            });
+            // this.sfx.fan.volume = vol;
+        }
+	
+		this.renderer.render( this.scene, this.camera );
+
+		// if (this.stats!=undefined) this.stats.update();
   }
 
   //MARK: - initScene
@@ -183,13 +233,15 @@ export class GameNewRpgComponent implements OnInit {
     loader.load('assets/lotus/fbx/girl-walk.fbx', (object: any) => {
       object.mixer = new THREE.AnimationMixer(object);
 
-      // object.mixer.addEventListener('finished', (e: any) => {
-			// 	this.action('look-around');
-      //           if (this.player.cameras.active == this.player.cameras.collect){
-      //               this.activeCamera(this.player.cameras.back);
-      //               // game.toggleBriefcase();
-      //           }
-			// })
+      object.mixer.addEventListener('finished', (e: any) => {
+				this.action('look-around');
+        if (this.player.cameras.active == this.player.cameras.collect){
+
+          console.log("this.player.cameras.active == this.player.cameras.collect");
+            this.activeCamera(this.player.cameras.back);
+            this.toggleBriefcase();
+        }
+			})
 
       this.player.mixer = object.mixer;
       this.player.root = object.mixer.getRoot();
@@ -251,6 +303,26 @@ export class GameNewRpgComponent implements OnInit {
 			
 			this.loadNextAnim(loader);
 		}, null, (err:any)=>{console.log(err)} );
+	}
+
+  showMessage(msg: any, fontSize: number = 20, onOK: (() => void) | null = null) {
+		const txt = document.getElementById('message_text');
+		txt!.innerHTML = msg;
+		txt!.style.fontSize = fontSize + 'px';
+		const btn = document.getElementById('message_ok');
+		const panel = document.getElementById('message');
+		const game = this;
+		if (onOK!=null){
+			btn!.onclick = function(){ 
+				panel!.style.display = 'none';
+				onOK.call(game); 
+			}
+		}else{
+			btn!.onclick = function(){
+				panel!.style.display = 'none';
+			}
+		}
+		panel!.style.display = 'flex';
 	}
 
   //MARK: - playerControl
@@ -407,6 +479,92 @@ export class GameNewRpgComponent implements OnInit {
 			this.player.object.position.y = pos.y - intersect[0].distance;
 		}
 	}
+
+  switchCamera(fade=0.05){
+
+    console.log(this.player.cameras);
+		const cams = Object.keys(this.player.cameras);
+		cams.splice(cams.indexOf('active'), 1);
+		let index;
+		for(let prop in this.player.cameras){
+			if (this.player.cameras[prop]==this.player.cameras.active){
+				index = cams.indexOf(prop) + 1;
+				if (index>=cams.length) index = 0;
+				this.player.cameras.active = this.player.cameras[cams[index]];
+				break;
+			}
+		}
+		this.cameraFade = fade;
+	}
+
+  toggleBriefcase(){
+
+    console.log("toggleBriefcase");
+    const briefcase = document.getElementById("briefcase");
+    const open = briefcase && parseFloat(briefcase.style.opacity) > 0;
+    
+    if (open){
+        briefcase.style.opacity = "0";
+    }else{
+        briefcase!.style.opacity = "1";
+    }
+}
+
+contextAction(){
+  console.log('contextAction called ' + JSON.stringify(this.onAction));
+  if (this.onAction !== undefined){
+    if (this.onAction.action!=undefined){
+      this.action(this.onAction.action);
+    }
+  }
+  
+  const game = this;
+  
+  if (this.onAction.mode !== undefined){
+    switch(this.onAction.mode){
+      case 'open-doors':
+        // this.sfx.door.play();
+        // this.sfx.button.play();
+        const door = this.doors[this.onAction.index];
+        const left = door.doors[0];
+        const right = door.doors[1];
+        this.cameraTarget = { position:left.position.clone(), target:left.position.clone() };
+        this.cameraTarget.position.y += 150;
+        this.cameraTarget.position.x -= 950;
+        //target, channel, endValue, duration, oncomplete, easing="inOutQuad"){
+        this.tweens.push( new Tween(left.position, "z", left.position.z - 240, 2, ()=>{
+          game.tweens.splice(game.tweens.indexOf(this), 1);
+        }));
+        this.tweens.push( new Tween(right.position, "z", right.position.z + 240, 2, ()=>{
+          game.tweens.splice(game.tweens.indexOf(this), 1);
+          this.cameraTarget = null;
+          const door = game.doors[this.onAction.index];
+          const left = door.doors[0];
+          const right = door.doors[1];
+          const leftProxy = door.proxy[0];
+          const rightProxy = door.proxy[1];
+          leftProxy.position = left.position.clone();
+          rightProxy.position = right.position.clone();
+        }))
+
+        break;
+              case 'collect':
+                  this.activeCamera = this.player.cameras.collect;
+                  this.collect[this.onAction.index].visible = false;
+                  if (this.collected==undefined) this.collected = [];
+                  this.collected.push(this.onAction.index);
+                  const briefcase = document.getElementById("briefcase");
+                  if (briefcase && briefcase.children[0] && briefcase.children[0].children[0] && briefcase.children[0].children[0].children[this.onAction.index] && briefcase.children[0].children[0].children[this.onAction.index].children[0]) {
+                    (briefcase.children[0].children[0].children[this.onAction.index].children[0] as HTMLImageElement).src = this.onAction.src;
+                  }
+
+                  console.log(this.collected);;
+                  
+                  break;
+    }
+  }
+}
+
 
   //MARK: - createCameras
   createCameras(){
