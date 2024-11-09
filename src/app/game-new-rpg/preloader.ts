@@ -174,8 +174,6 @@ export class PreloaderInit {
                         }
                     }
                     this.oncomplete();
-
-                    console.log(object);
                 }
             },
             (xhr:any) => {

@@ -37,6 +37,8 @@ export class GameNewRpgComponent implements OnInit {
   ngOnInit() {
     this.mode = this.modes.PRELOAD;
 
+    
+
     const assets = this.anims.map(anim => `assets/lotus/fbx/${anim}.fbx`);
     console.log(assets);
 
@@ -61,7 +63,11 @@ export class GameNewRpgComponent implements OnInit {
     const dt = this.clock.getDelta();
     requestAnimationFrame(() => this.runAnimate());
 
-    if (this.player.mixer!=undefined && this.mode==this.modes.ACTIVE) this.player.mixer.update(dt);
+    if (this.player?.mixer){
+      // console.log(this.player.mixer);
+      this.player.mixer.update(dt);
+    }
+
 		
 		if (this.player.move!=undefined){
 			if (this.player.move.forward>0) this.player.object.translateZ(dt*100);
@@ -79,9 +85,10 @@ export class GameNewRpgComponent implements OnInit {
 
   //MARK: - initScene
   initScene() {
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+		this.renderer.shadowMap.enabled = true;
     this.rendererContainer.nativeElement.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -167,8 +174,13 @@ export class GameNewRpgComponent implements OnInit {
       this.createCameras();
       this.loadNextAnim(loader);
 
+  
+
+
 
     });
+
+    this.mode = this.modes.ACTIVE;
   }
 
   //MARK: - playerControl
@@ -186,7 +198,6 @@ export class GameNewRpgComponent implements OnInit {
 			this.player.move = { forward, turn }; 
 		}
 
-    console.log(this.player);
 	}
 
   action(name:any){
