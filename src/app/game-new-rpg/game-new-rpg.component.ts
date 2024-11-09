@@ -56,7 +56,7 @@ export class GameNewRpgComponent implements OnInit {
 
     new PreloaderInit(preloaderOptions);
   }
-
+  //MARK: - runAnimate
   runAnimate() {
     const dt = this.clock.getDelta();
     requestAnimationFrame(() => this.runAnimate());
@@ -77,6 +77,7 @@ export class GameNewRpgComponent implements OnInit {
     this.renderer.render(this.scene, this.camera);
   }
 
+  //MARK: - initScene
   initScene() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -136,6 +137,7 @@ export class GameNewRpgComponent implements OnInit {
     return map;
   }
 
+  //MARK: - loadModel
   loadModel() {
     const loader = new FBXLoader();
     loader.load('assets/lotus/fbx/girl-walk.fbx', (object: any) => {
@@ -151,15 +153,7 @@ export class GameNewRpgComponent implements OnInit {
         }
       });
 
-    
-      if ( object.animations && object.animations.length ) {
-
-
-        const action = object.mixer.clipAction( object.animations[0] );
-        action.play();
-
-      }
-      
+  
 
       this.scene.add(object);
       this.player.object = object;
@@ -177,6 +171,7 @@ export class GameNewRpgComponent implements OnInit {
     });
   }
 
+  //MARK: - playerControl
   playerControl(forward:any, turn:any){
 		//console.log(`playerControl(${forward}), ${turn}`);
         
@@ -212,6 +207,7 @@ export class GameNewRpgComponent implements OnInit {
 		this.player.action = name;
 		action.fadeIn(0.5);	
 		action.play();
+
 	}
 
   loadNextAnim(loader: any) {
@@ -231,7 +227,7 @@ export class GameNewRpgComponent implements OnInit {
     });
   }
 
-
+  //
   createCameras(){
 		const offset = new THREE.Vector3(0, 60, 0);
 		const front = new THREE.Object3D();
