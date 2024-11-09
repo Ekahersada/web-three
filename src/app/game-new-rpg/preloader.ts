@@ -27,7 +27,7 @@ export class PreloaderInit {
         this.assets = {};
         for (let asset of options.assets) {
             this.assets[asset] = { loaded: 0, complete: false };
-            this.loadFBX(asset);
+            this.load(asset);
         }
         this.container = options.container;
 
