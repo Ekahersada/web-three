@@ -1,4 +1,7 @@
 
+import { FBXLoader } from 'three/examples/jsm/Addons.js'
+
+
 export interface PreloaderOptions {
     assets: string[];
     container?: HTMLElement;
@@ -24,7 +27,7 @@ export class PreloaderInit {
         this.assets = {};
         for (let asset of options.assets) {
             this.assets[asset] = { loaded: 0, complete: false };
-            this.load(asset);
+            this.loadFBX(asset);
         }
         this.container = options.container;
 
@@ -37,12 +40,13 @@ export class PreloaderInit {
             console.log('undefined');
         } else {
             this.onprogress = options.onprogress;
-            this.createProgressBar();
-
 
         }
 
-        this.oncomplete = options.oncomplete || (() => {});
+        this.oncomplete = options.oncomplete || (() => {
+
+           
+        });
     }
 
     private createProgressBar() {
@@ -81,6 +85,7 @@ export class PreloaderInit {
         } else {
             this.container.appendChild(this.domElement);
         }
+        // document.body.appendChild(this.domElement);
 
         
 
@@ -121,7 +126,8 @@ export class PreloaderInit {
     }
 
     private load(url: string) {
-        
+
+        console.log(url);
         const loader = this;
         const xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
@@ -130,10 +136,11 @@ export class PreloaderInit {
             if (xobj.readyState === 4 && xobj.status === 200) {
                 loader.assets[url].complete = true;
                 if (loader.checkCompleted()) {
+
                     if (loader.domElement !== undefined) {
-                        if (loader.container !== undefined && loader.container.contains(loader.domElement)) {
+                        if (loader.container !== undefined) {
                             loader.container.removeChild(loader.domElement);
-                        } else if (document.body.contains(loader.domElement)) {
+                        } else {
                             document.body.removeChild(loader.domElement);
                         }
                     }
@@ -148,5 +155,38 @@ export class PreloaderInit {
             loader.onprogress(loader.progress);
         };
         xobj.send(null);
+    
+    }
+
+    private loadFBX(url: string) {
+        const loader = new FBXLoader();
+        loader.load(
+            url,
+            (object:any) => {
+                this.assets[url].complete = true;
+
+                if (this.checkCompleted()) {
+                    if (this.domElement !== undefined) {
+                        if (this.container !== undefined) {
+                            this.container.removeChild(this.domElement);
+                        } else {
+                            document.body.removeChild(this.domElement);
+                        }
+                    }
+                    this.oncomplete();
+
+                    console.log(object);
+                }
+            },
+            (xhr:any) => {
+                const asset = this.assets[url];
+                asset.loaded = xhr.loaded;
+                asset.total = xhr.total;
+                this.onprogress(this.progress);
+            },
+            (error:any) => {
+                console.error('An error happened', error);
+            }
+        );
     }
 }
