@@ -4,7 +4,15 @@
     <button id="message_ok">OK</button>
 </div>
 <div id="overlay"></div>
+
+<div class="absolute z-20 top-0">
+    <div class="flex w-full">
+        <button class="btn" (click)="toggleDancing()"><i class="fas fa-camera "></i></button>
+    </div>
+</div>
 <button id="sfx-btn"><i class="fas fa-volume-up"></i></button>
+
+
 <button id="camera-btn" (click)="switchCamera()"><i class="fas fa-camera"></i></button>
 <button id="action-btn" (click)="contextAction()"><i class="fas fa-hand-point-up"></i></button>
 <button id="briefcase-btn" (click)="toggleBriefcase()"><i class="fas fa-briefcase"></i></button>

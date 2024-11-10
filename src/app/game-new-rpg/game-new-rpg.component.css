@@ -73,6 +73,18 @@
     color: #fff;
   }
   
+
+  .btn{
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background:#3B53A2;
+    font-size: 25px;
+    color: #fff;
+  }
+
+  
   #action-btn{
     position: absolute;
     z-index: 15;

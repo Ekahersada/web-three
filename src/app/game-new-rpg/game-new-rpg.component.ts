@@ -20,7 +20,7 @@ export class GameNewRpgComponent implements OnInit {
   private camera!: THREE.PerspectiveCamera;
   private orbit!: OrbitControls;
 
-  anims = ["ascend-stairs", "gather-objects", "look-around", "push-button", "run"];
+  anims = ["ascend-stairs", "gather-objects", "look-around", "push-button", "run","dancing","punch"];
 
   modes = {
     NONE: "none",
@@ -205,6 +205,7 @@ export class GameNewRpgComponent implements OnInit {
     dirLight.shadow.camera.right = 120;
     this.scene.add(dirLight);
   }
+  
 
   generateFloor() {
     const mesh = new THREE.Mesh(
@@ -421,17 +422,19 @@ export class GameNewRpgComponent implements OnInit {
 	}
 
   action(name:any){
-    if (this.player.action==name) return;
-		const anim = this.player[name];
-		const action = this.player.mixer.clipAction( anim,  this.player.root );
-		this.player.mixer.stopAllAction();
-		this.player.action = name;
-		action.timeScale = (name=='walk' && this.player.move!=undefined && this.player.move.forward<0) ? -0.3 : 1;
-        action.time = 0;
-		action.fadeIn(0.5);	
-		if (name=='push-button' || name=='gather-objects') action.loop = THREE.LoopOnce;
-		action.play();
-		this.player.actionTime = Date.now();
+    if (this.player.action == name) return;
+    const anim = this.player[name];
+    const action = this.player.mixer.clipAction(anim, this.player.root);
+    action.reset();
+    // this.player.mixer.stopAllAction();
+    this.player.action = name;
+    action.timeScale = (name == 'walk' && this.player.move != undefined && this.player.move.forward < 0) ? -0.3 : 1;
+    action.time = 0;
+    action.fadeIn(0.5);
+    if (name == 'push-button' || name == 'gather-objects') action.loop = THREE.LoopOnce;
+    action.play();
+    this.player.actionTime = Date.now();
+   
 
 	}
 
@@ -508,6 +511,10 @@ export class GameNewRpgComponent implements OnInit {
     }else{
         briefcase!.style.opacity = "1";
     }
+}
+
+toggleDancing(){
+  this.action('dancing');
 }
 
 contextAction(){
