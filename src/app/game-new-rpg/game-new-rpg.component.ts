@@ -181,8 +181,14 @@ export class GameNewRpgComponent implements OnInit {
     const gridHelper = new THREE.GridHelper(40, 40);
     this.scene.add(gridHelper);
 
-    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
-    // this.camera.position.set(0, 1, 0);
+
+    const fov = 60;
+    const aspect = window.innerWidth / window.innerHeight;
+    const near = 1.0;
+    const far = 2000.0;
+
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    this.camera.position.set(25, 10, 25);
     // this.camera.near = 0.015;
     // this.camera.updateProjectionMatrix();
 
@@ -425,14 +431,19 @@ export class GameNewRpgComponent implements OnInit {
     if (this.player.action == name) return;
     const anim = this.player[name];
     const action = this.player.mixer.clipAction(anim, this.player.root);
-    action.reset();
-    // this.player.mixer.stopAllAction();
+
+    if (this.player.activeAction) {
+      this.player.activeAction.fadeOut(0.5);
+    }
+
+    this.player.activeAction = action;
     this.player.action = name;
+
     action.timeScale = (name == 'walk' && this.player.move != undefined && this.player.move.forward < 0) ? -0.3 : 1;
     action.time = 0;
-    action.fadeIn(0.5);
+    // action.fadeIn(0.5);
     if (name == 'push-button' || name == 'gather-objects') action.loop = THREE.LoopOnce;
-    action.play();
+    action.reset().fadeIn(0.5).play();
     this.player.actionTime = Date.now();
    
 
