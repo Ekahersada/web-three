@@ -13,6 +13,7 @@ import {
 export class LoadersService {
   private loadingManager?: THREE.LoadingManager;
   private loader?: THREE.TextureLoader;
+  private fbxLoader?: FBXLoader;
   private totalObjects: number = 0;
   private loadedObjects: number = 0;
 
@@ -29,12 +30,25 @@ export class LoadersService {
       (url, itemsLoaded, itemsTotal) => {
         this.loadedObjects = itemsLoaded;
         this.totalObjects = itemsTotal;
+
+        this.updateProgressWithDelay(itemsLoaded, itemsTotal);
         const progress = (itemsLoaded / itemsTotal) * 100;
         this.onProgress.emit(progress);
       }
     );
 
-    this.loader = new THREE.TextureLoader(this.loadingManager);
+    // this.loader = new THREE.TextureLoader(this.loadingManager);
+
+    this.fbxLoader = new FBXLoader(this.loadingManager);
+  }
+
+  private updateProgressWithDelay(itemsLoaded: number, itemsTotal: number) {
+    const progress = (itemsLoaded / itemsTotal) * 100;
+
+    // Delay untuk memperlambat pembaruan progress
+    setTimeout(() => {
+      this.onProgress.emit(progress);
+    }, 500); // Delay 100ms
   }
 
   public loadTexture(url: string): Promise<THREE.Texture> {
@@ -54,8 +68,7 @@ export class LoadersService {
 
   public loadFBX(url: string): Promise<THREE.Group> {
     return new Promise((resolve, reject) => {
-      const fbxLoader = new FBXLoader(this.loadingManager);
-      fbxLoader.load(
+      this.fbxLoader?.load(
         url,
         (object) => {
           resolve(object);
@@ -66,6 +79,10 @@ export class LoadersService {
         }
       );
     });
+  }
+
+  public loadMultipleFbx(urls: string[]): Promise<THREE.Group[]> {
+    return Promise.all(urls.map((url) => this.loadFBX(url)));
   }
 
   public getProgress(): number {

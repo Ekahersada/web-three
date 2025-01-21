@@ -1,4 +1,7 @@
-<div>
-  <p>Loading Progress: {{ progress }}%</p>
-  <p *ngIf="loadingComplete">Loading Complete!</p>
+<div class=" p-6 flex flex-col items-center justify-center min-h-screen bg-gray-100">
+  <p class="text-lg font-semibold text-blue-500">Loading Progress: {{ progress }}%</p>
+  <p *ngIf="loadingComplete" class="text-lg font-semibold text-green-500">Loading Complete!</p>
+  <div class="w-full bg-gray-300 rounded-full h-4 mt-4">
+    <div class="bg-blue-500 h-4 rounded-full" [style.width.%]="progress"></div>
+  </div>
 </div>
