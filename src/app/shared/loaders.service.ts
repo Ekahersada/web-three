@@ -32,8 +32,8 @@ export class LoadersService {
         this.totalObjects = itemsTotal;
 
         this.updateProgressWithDelay(itemsLoaded, itemsTotal);
-        const progress = (itemsLoaded / itemsTotal) * 100;
-        this.onProgress.emit(progress);
+        // const progress = (itemsLoaded / itemsTotal) * 100;
+        // this.onProgress.emit(progress);
       }
     );
 
@@ -48,7 +48,7 @@ export class LoadersService {
     // Delay untuk memperlambat pembaruan progress
     setTimeout(() => {
       this.onProgress.emit(progress);
-    }, 500); // Delay 100ms
+    }, 2000); // Delay 100ms
   }
 
   public loadTexture(url: string): Promise<THREE.Texture> {
