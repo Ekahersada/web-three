@@ -5,6 +5,7 @@ import {
   GLTFLoader,
   Octree,
   OctreeHelper,
+  OBJLoader,
   Capsule,
   PointerLockControls,
 } from 'three/examples/jsm/Addons.js';
@@ -43,7 +44,7 @@ export class GameFpsNewComponent implements OnInit {
 
   STEPS_PER_FRAME = 5;
 
-  speed = 45;
+  speed = 70;
 
   worldOctree = new Octree();
 
@@ -103,13 +104,13 @@ export class GameFpsNewComponent implements OnInit {
 
       if (this.tommyGun) {
         // Match tommy gun to player camera position
-        this.tommyGun.position.copy(this.camera.position);
-        this.tommyGun.rotation.copy(this.camera.rotation);
-        this.tommyGun.updateMatrix();
-        this.tommyGun.translateZ(-0.05);
-        this.tommyGun.translateY(-0.05);
-        this.tommyGun.translateX(-0.025);
-        this.tommyGun.rotateY(Math.PI / 2); // Rotate the model by 180 degrees
+        // this.tommyGun.position.copy(this.camera.position);
+        // this.tommyGun.rotation.copy(this.camera.rotation);
+        // this.tommyGun.updateMatrix();
+        // this.tommyGun.translateZ(-0.05);
+        // this.tommyGun.translateY(-0.05);
+        // this.tommyGun.translateX(-0.025);
+        // this.tommyGun.rotateY(Math.PI / 2); // Rotate the model by 180 degrees
       }
 
       this.applyCameraBounce(deltaTime);
@@ -129,8 +130,8 @@ export class GameFpsNewComponent implements OnInit {
     this.scene.background = new THREE.Color(0xa8def0);
 
     // Create a grid
-    var gridHelper = new THREE.GridHelper(40, 40);
-    this.scene.add(gridHelper);
+    // var gridHelper = new THREE.GridHelper(40, 40);
+    // this.scene.add(gridHelper);
 
     // Initialize camera
     this.camera = new THREE.PerspectiveCamera(
@@ -198,18 +199,81 @@ export class GameFpsNewComponent implements OnInit {
   //--------------------------------------MARK:MODEL ------------------//
 
   loadGun() {
-    const loader = new GLTFLoader();
-    loader.load('./assets/models/Gun.glb', (gltf) => {
-      gltf.scene.scale.set(0.25, 0.25, 0.25);
-      gltf.scene.position.set(
-        this.camera.position.x,
-        this.camera.position.y,
-        this.camera.position.z - 2
-      );
-      const model = gltf.scene;
+    // const loader = new GLTFLoader();
+    // loader.load('./assets/models/Gun.glb', (gltf) => {
+    //   gltf.scene.scale.set(0.25, 0.25, 0.25);
+    //   gltf.scene.position.set(
+    //     this.camera.position.x,
+    //     this.camera.position.y,
+    //     this.camera.position.z - 2
+    //   );
+    //   const model = gltf.scene;
 
-      this.tommyGun = gltf.scene;
-      this.scene.add(model);
+    //   this.tommyGun = gltf.scene;
+    //   this.scene.add(model);
+    // });
+
+    const objLoader = new OBJLoader();
+    objLoader.load('./assets/models/gun/portal-gun.obj', (object) => {
+      object.scale.set(0.01, 0.01, 0.01);
+      this.scene.add(object);
+      this.tommyGun = object;
+
+      setTimeout(() => {
+        this.tommyGun.position.copy(this.camera.position);
+        this.tommyGun.rotation.copy(this.camera.rotation);
+        this.tommyGun.updateMatrix();
+        this.tommyGun.translateZ(-0.05);
+        this.tommyGun.translateY(-0.05);
+        this.tommyGun.translateX(-0.03);
+        this.tommyGun.rotateY(Math.PI / 3);
+        this.tommyGun.rotation.y = -3.1;
+
+        const gui = new GUI({ width: 300 });
+
+        const rotationFolder = gui.addFolder('Rotation');
+        rotationFolder
+          .add(object.rotation, 'x', -Math.PI, Math.PI)
+          .onChange((value: any) => {
+            this.tommyGun.rotation.x = value;
+          });
+        rotationFolder
+          .add(object.rotation, 'y', -Math.PI, 10)
+          .onChange((value: any) => {
+            this.tommyGun.rotation.y = value;
+          });
+        rotationFolder
+          .add(object.rotation, 'z', -Math.PI, Math.PI)
+          .onChange((value: any) => {
+            this.tommyGun.rotation.z = value;
+          });
+        rotationFolder.open();
+
+        // const scaleFolder = gui.addFolder('Scale');
+        // scaleFolder.add(object.scale, 'x', -10, 2).onChange((value: any) => {
+        //   this.tommyGun.scale.x = value;
+        // });
+        // scaleFolder.add(object.scale, 'y', -10, 2).onChange((value: any) => {
+        //   this.tommyGun.scale.y = value;
+        // });
+        // scaleFolder.add(object.scale, 'z', -10, 2).onChange((value: any) => {
+        //   this.tommyGun.scale.z = value;
+        // });
+        // scaleFolder.open();
+
+        const positionFolder = gui.addFolder('Position');
+        gui.add(object.position, 'x', 0.01, 10).onChange((value: any) => {
+          this.tommyGun.position.x = value;
+        });
+        gui.add(object.position, 'y', 0.01, 10).onChange((value: any) => {
+          this.tommyGun.position.y = value;
+        });
+        gui.add(object.position, 'z', 0.01, 10).onChange((value: any) => {
+          this.tommyGun.position.z = value;
+        });
+
+        positionFolder.open();
+      }, 2000);
     });
   }
 
@@ -231,6 +295,15 @@ export class GameFpsNewComponent implements OnInit {
     sphere.velocity.addScaledVector(this.playerVelocity, 2);
 
     this.sphereIdx = (this.sphereIdx + 1) % this.spheres.length;
+
+    this.removeSphereAfterDelay(sphere, 2000);
+  }
+
+  removeSphereAfterDelay(sphere: any, delay: number) {
+    setTimeout(() => {
+      this.scene.remove(sphere.mesh);
+      this.spheres = this.spheres.filter((s) => s !== sphere);
+    }, delay);
   }
 
   updateSpheres(deltaTime: any) {
