@@ -31,9 +31,9 @@ export class LoadersService {
         this.loadedObjects = itemsLoaded;
         this.totalObjects = itemsTotal;
 
-        this.updateProgressWithDelay(itemsLoaded, itemsTotal);
-        // const progress = (itemsLoaded / itemsTotal) * 100;
-        // this.onProgress.emit(progress);
+        // this.updateProgressWithDelay(itemsLoaded, itemsTotal);
+        const progress = (itemsLoaded / itemsTotal) * 100;
+        this.onProgress.emit(progress);
       }
     );
 

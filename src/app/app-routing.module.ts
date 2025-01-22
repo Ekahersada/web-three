@@ -42,6 +42,13 @@ const routes: Routes = [
       import('./game-test/game-test.module').then((m) => m.GameTestModule),
   },
   {
+    path: 'game-fps3',
+    loadChildren: () =>
+      import('./game-fps-new/game-fps-new.module').then(
+        (m) => m.GameFpsNewModule
+      ),
+  },
+  {
     path: 'game-new',
     loadChildren: () =>
       import('./game-new-rpg/game-new-rpg.module').then(
