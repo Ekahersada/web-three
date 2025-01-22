@@ -4,3 +4,14 @@
     position: fixed;
   }
   
+
+  .joystick{
+    bottom: 66px;
+    left: 18px;
+    position: absolute !important;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.149);
+    border-radius: 50%;
+    z-index: 1000;
+  }

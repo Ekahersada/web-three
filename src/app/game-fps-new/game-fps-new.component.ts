@@ -19,6 +19,9 @@ export class GameFpsNewComponent implements OnInit {
   @ViewChild('rendererContainer2', { static: true })
   rendererContainer!: ElementRef;
 
+  @ViewChild('joystickContainer', { static: true })
+  joystickContainer!: ElementRef;
+
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
     75,
