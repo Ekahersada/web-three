@@ -127,7 +127,7 @@ export class GameFpsNewComponent implements OnInit {
 
       this.updateSpheres(deltaTime);
 
-      this.teleportPlayerIfOob();
+      // this.teleportPlayerIfOob();
 
       if (this.tommyGun) {
         // Match tommy gun to player camera position
@@ -663,6 +663,10 @@ export class GameFpsNewComponent implements OnInit {
       this.reloadWeapon();
     }
 
+    if (this.keyStates['KeyF']) {
+      this.teleportPlayerIfOob();
+    }
+
     if (this.keyStates['KeyW']) {
       this.playerVelocity.add(
         this.getForwardVector().multiplyScalar(speedDelta)
@@ -745,13 +749,13 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   teleportPlayerIfOob() {
-    if (this.camera.position.y <= -25) {
-      this.playerCollider.start.set(0, 0.35, 0);
-      this.playerCollider.end.set(0, 1, 0);
-      this.playerCollider.radius = 0.35;
-      this.camera.position.copy(this.playerCollider.end);
-      this.camera.rotation.set(0, 0, 0);
-    }
+    // if (this.camera.position.y <= -25) {
+    this.playerCollider.start.set(0, 0.35, 0);
+    this.playerCollider.end.set(0, 1, 0);
+    this.playerCollider.radius = 0.35;
+    this.camera.position.copy(this.playerCollider.end);
+    this.camera.rotation.set(0, 0, 0);
+    // }
   }
 
   // MARK:ADD NPC
