@@ -1,4 +1,7 @@
 <div class="bx-ammo fixed z-[1]">Ammo:{{ammoCount}}</div>
+<div #joystickContainer class="joystick grid place-items-center">
+  <span class="opacity-50"></span>
+</div>
 <div #rendererContainer2 class="renderer-container relative flex justify-center items-center">
   <div class="fixed bottom-0 left-0 z[1] p-4 rounded-xl bg-white bg-opacity-50" (click)="reloadWeapon()">RELOAD</div>
   <div class="absolute">
@@ -6,8 +9,4 @@
 
     </div>
   </div>
-</div>
-
-<div #joystickContainer class="joystick grid place-items-center">
-  <span class="opacity-50">MOVE</span>
 </div>
