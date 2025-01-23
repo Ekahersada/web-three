@@ -363,11 +363,13 @@ export class GameFpsNewComponent implements OnInit {
 
     this.listenKeyboard();
 
-    this.addRandomNPC(
-      'assets/models/Demon.fbx',
-      { x: 0.002, y: 0.002, z: 0.002 },
-      'Bite_Front'
-    );
+    setTimeout(() => {
+      this.addRandomNPC(
+        'assets/models/Demon.fbx',
+        { x: 0.002, y: 0.002, z: 0.002 },
+        'Bite_Front'
+      );
+    }, 8000);
     // for (let i = 0; i < 10; i++) {
     // }
   }
@@ -651,22 +653,25 @@ export class GameFpsNewComponent implements OnInit {
       }
 
       // CASE NPC TABRAK pLAYER
-      const playerCenter = this.vector1
-        .addVectors(this.playerCollider.start, this.playerCollider.end)
-        .multiplyScalar(0.5);
 
-      const npcCenter = this.vector2
-        .addVectors(this.npc_capsule.start, this.npc_capsule.end)
-        .multiplyScalar(0.5);
+      if (this.npc_capsule) {
+        const playerCenter = this.vector1
+          .addVectors(this.playerCollider.start, this.playerCollider.end)
+          .multiplyScalar(0.5);
 
-      const distance = playerCenter.distanceTo(npcCenter);
-      const combinedRadius =
-        this.playerCollider.radius + this.npc_capsule.radius;
+        const npcCenter = this.vector2
+          .addVectors(this.npc_capsule.start, this.npc_capsule.end)
+          .multiplyScalar(0.5);
 
-      if (!this.spawnPosition) {
-        if (distance < combinedRadius) {
-          this.spawnPosition = true;
-          this.teleportPlayerIfOob();
+        const distance = playerCenter.distanceTo(npcCenter);
+        const combinedRadius =
+          this.playerCollider.radius + this.npc_capsule.radius;
+
+        if (!this.spawnPosition) {
+          if (distance < combinedRadius) {
+            this.spawnPosition = true;
+            this.teleportPlayerIfOob();
+          }
         }
       }
     }
@@ -1014,5 +1019,9 @@ export class GameFpsNewComponent implements OnInit {
 
   updateDirectionStatus(activeKeys: any) {
     console.log(activeKeys);
+    this.keyStates['KeyW'] = activeKeys.includes('w');
+    this.keyStates['KeyS'] = activeKeys.includes('s');
+    this.keyStates['KeyA'] = activeKeys.includes('a');
+    this.keyStates['KeyD'] = activeKeys.includes('d');
   }
 }
