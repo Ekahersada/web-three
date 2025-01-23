@@ -251,10 +251,10 @@ export class GameFpsNewComponent implements OnInit {
 
       console.log(deltaX, deltaY);
       // Update posisi kamera berdasarkan gerakan sentuh
-      this.camera.rotation.y -= deltaX * 0.001; // Sensitivitas gerakan horizontal
+      this.camera.rotation.y -= deltaX * 0.01; // Sensitivitas gerakan horizontal
       // this.camera.rotation.x -= deltaY * 0.0001; // Sensitivitas gerakan vertikal
 
-      const newRotationX = this.camera.rotation.x - deltaY * 0.001;
+      const newRotationX = this.camera.rotation.x - deltaY * 0.01;
       const maxRotationX = 4; // Limit for looking up
       const minRotationX = -1; // Limit for looking down
 
