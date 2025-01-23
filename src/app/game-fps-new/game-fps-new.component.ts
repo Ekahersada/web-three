@@ -234,6 +234,7 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   private handleTouchStart(event: TouchEvent): void {
+    // console.log(event.touches);
     if (event.touches.length === 1) {
       this.isDragging = true;
       this.previousMousePosition = {
@@ -248,9 +249,22 @@ export class GameFpsNewComponent implements OnInit {
       const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
       const deltaY = event.touches[0].clientY - this.previousMousePosition.y;
 
+      console.log(deltaX, deltaY);
       // Update posisi kamera berdasarkan gerakan sentuh
-      this.camera.position.x -= deltaX * 0.01; // Sensitivitas gerakan horizontal
-      this.camera.position.y += deltaY * 0.01; // Sensitivitas gerakan vertikal
+      this.camera.rotation.y -= deltaX * 0.001; // Sensitivitas gerakan horizontal
+      // this.camera.rotation.x -= deltaY * 0.0001; // Sensitivitas gerakan vertikal
+
+      const newRotationX = this.camera.rotation.x - deltaY * 0.001;
+      const maxRotationX = 4; // Limit for looking up
+      const minRotationX = -1; // Limit for looking down
+
+      // Apply the limits
+      this.camera.rotation.x = Math.max(
+        minRotationX,
+        Math.min(maxRotationX, newRotationX)
+      );
+
+      // this.controls.update();
 
       // Simpan posisi mouse sebelumnya
       this.previousMousePosition = {
