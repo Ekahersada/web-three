@@ -12,6 +12,8 @@ import {
 } from 'three/examples/jsm/Addons.js';
 import { GUI } from 'dat.gui';
 
+import nipplejs from 'nipplejs';
+
 @Component({
   selector: 'app-game-fps-new',
   templateUrl: './game-fps-new.component.html',
@@ -102,11 +104,18 @@ export class GameFpsNewComponent implements OnInit {
 
   spawnPosition: boolean = false;
 
+  private joystick: any;
+
+  private isDragging: boolean = false;
+  private previousMousePosition: { x: number; y: number } | null = null;
+
   constructor() {}
 
   ngOnInit() {
     this.initScene();
     this.animate();
+    this.initJoystick();
+    this.setupTouchControls();
   }
 
   //MARK:ANIMATE
@@ -208,6 +217,51 @@ export class GameFpsNewComponent implements OnInit {
         );
       }, 2000);
     }
+  }
+
+  private setupTouchControls(): void {
+    const element = this.rendererContainer.nativeElement;
+
+    element.addEventListener('touchstart', (event: TouchEvent) =>
+      this.handleTouchStart(event)
+    );
+    element.addEventListener('touchmove', (event: TouchEvent) =>
+      this.handleTouchMove(event)
+    );
+    element.addEventListener('touchend', (event: TouchEvent) =>
+      this.handleTouchEnd(event)
+    );
+  }
+
+  private handleTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      this.isDragging = true;
+      this.previousMousePosition = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      };
+    }
+  }
+
+  private handleTouchMove(event: TouchEvent): void {
+    if (this.isDragging && this.previousMousePosition) {
+      const deltaX = event.touches[0].clientX - this.previousMousePosition.x;
+      const deltaY = event.touches[0].clientY - this.previousMousePosition.y;
+
+      // Update posisi kamera berdasarkan gerakan sentuh
+      this.camera.position.x -= deltaX * 0.01; // Sensitivitas gerakan horizontal
+      this.camera.position.y += deltaY * 0.01; // Sensitivitas gerakan vertikal
+
+      // Simpan posisi mouse sebelumnya
+      this.previousMousePosition = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      };
+    }
+  }
+
+  private handleTouchEnd(event: TouchEvent): void {
+    this.isDragging = false;
   }
 
   randomMoveNPC(deltaTime: number) {
@@ -908,5 +962,57 @@ export class GameFpsNewComponent implements OnInit {
       action.reset().play();
     } else {
     }
+  }
+
+  private initJoystick(): void {
+    const options = {
+      zone: this.joystickContainer.nativeElement,
+      color: 'blue',
+      size: 100,
+      position: { left: '50%', top: '50%' },
+      lockX: false,
+      lockY: false,
+    };
+
+    this.joystick = nipplejs.create(options);
+
+    this.joystick.on('move', (event: any, data: any) => {
+      var vector = data.vector;
+      var activeKeys = [];
+
+      // Threshold untuk mendeteksi apakah gerakan lebih dominan di satu arah
+      var threshold = 0.5;
+
+      if (Math.abs(vector.x) > Math.abs(vector.y) * threshold) {
+        // Gerakan lebih dominan ke arah horizontal
+        if (vector.x < 0) {
+          activeKeys.push('a'); // Kiri
+        } else if (vector.x > 0) {
+          activeKeys.push('d'); // Kanan
+        }
+      }
+
+      if (Math.abs(vector.y) > Math.abs(vector.x) * threshold) {
+        // Gerakan lebih dominan ke arah vertikal
+        if (vector.y < 0) {
+          activeKeys.push('s'); // Bawah
+        } else if (vector.y > 0) {
+          activeKeys.push('w'); // Atas
+        }
+      }
+
+      // console.log(vector);
+      this.updateDirectionStatus(activeKeys);
+    });
+
+    this.joystick.on('end', (event: any) => {
+      // this.triggerAction(null);
+
+      this.updateDirectionStatus([]);
+    });
+  }
+
+  updateDirectionStatus(activeKeys: any) {
+    console.log(activeKeys);
   }
 }
