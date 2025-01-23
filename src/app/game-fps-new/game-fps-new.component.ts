@@ -100,6 +100,8 @@ export class GameFpsNewComponent implements OnInit {
 
   npcMeshCapsule: any;
 
+  spawnPosition: boolean = false;
+
   constructor() {}
 
   ngOnInit() {
@@ -593,6 +595,26 @@ export class GameFpsNewComponent implements OnInit {
           result.normal.multiplyScalar(result.depth)
         );
       }
+
+      // CASE NPC TABRAK pLAYER
+      const playerCenter = this.vector1
+        .addVectors(this.playerCollider.start, this.playerCollider.end)
+        .multiplyScalar(0.5);
+
+      const npcCenter = this.vector2
+        .addVectors(this.npc_capsule.start, this.npc_capsule.end)
+        .multiplyScalar(0.5);
+
+      const distance = playerCenter.distanceTo(npcCenter);
+      const combinedRadius =
+        this.playerCollider.radius + this.npc_capsule.radius;
+
+      if (!this.spawnPosition) {
+        if (distance < combinedRadius) {
+          this.spawnPosition = true;
+          this.teleportPlayerIfOob();
+        }
+      }
     }
   }
 
@@ -755,6 +777,16 @@ export class GameFpsNewComponent implements OnInit {
     this.playerCollider.radius = 0.35;
     this.camera.position.copy(this.playerCollider.end);
     this.camera.rotation.set(0, 0, 0);
+
+    // const randomX = Math.random() * 10 - 10; // Random x position between -50 and 50
+    // const randomZ = Math.random() * 10 - 10; // Random z position between -50 and 50
+    // this.playerCollider.start.set(randomX, 0.35, randomZ);
+    // this.playerCollider.end.set(randomX, 1, randomZ);
+    // this.camera.position.copy(this.playerCollider.end);
+
+    setTimeout(() => {
+      this.spawnPosition = false;
+    }, 3000);
     // }
   }
 
