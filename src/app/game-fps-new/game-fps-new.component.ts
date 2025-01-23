@@ -2,6 +2,7 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
 import {
   OrbitControls,
+  FBXLoader,
   GLTFLoader,
   Octree,
   OctreeHelper,
@@ -30,6 +31,7 @@ export class GameFpsNewComponent implements OnInit {
     0.1,
     1000
   );
+  private axesHelper!: THREE.AxesHelper;
   renderer = new THREE.WebGLRenderer();
 
   controls: any;
@@ -75,7 +77,28 @@ export class GameFpsNewComponent implements OnInit {
   vector2 = new THREE.Vector3();
   vector3 = new THREE.Vector3();
 
+  npcVelocity = new THREE.Vector3();
+  npcDirection = new THREE.Vector3();
+  npcOnFloor = false;
+
   keyStates: any = {};
+
+  weaponPosisiton: any = {
+    x: 0.032,
+    y: -0.032,
+    z: -0.09,
+    pi: 0.04,
+  };
+
+  ammoCount = 24;
+
+  isReload: boolean = false;
+
+  npc_capsule: any;
+
+  npc: any;
+
+  npcMeshCapsule: any;
 
   constructor() {}
 
@@ -98,27 +121,136 @@ export class GameFpsNewComponent implements OnInit {
 
       this.updatePlayer(deltaTime);
 
+      if (this.npc && this.npc_capsule) {
+        this.updateNPC(deltaTime);
+      }
+
       this.updateSpheres(deltaTime);
 
       this.teleportPlayerIfOob();
 
       if (this.tommyGun) {
         // Match tommy gun to player camera position
-        // this.tommyGun.position.copy(this.camera.position);
-        // this.tommyGun.rotation.copy(this.camera.rotation);
-        // this.tommyGun.updateMatrix();
-        // this.tommyGun.translateZ(-0.05);
-        // this.tommyGun.translateY(-0.05);
-        // this.tommyGun.translateX(-0.025);
-        // this.tommyGun.rotateY(Math.PI / 2); // Rotate the model by 180 degrees
+        this.tommyGun.position.copy(this.camera.position);
+        this.tommyGun.rotation.copy(this.camera.rotation);
+        this.tommyGun.updateMatrix();
+        this.tommyGun.translateZ(this.weaponPosisiton.z);
+        this.tommyGun.translateY(this.weaponPosisiton.y);
+        this.tommyGun.translateX(this.weaponPosisiton.x);
+        this.tommyGun.rotateY(Math.PI / this.weaponPosisiton.pi);
+
+        if (this.isReload) {
+          // Apply reload effect, e.g., hide the gun or play reload animation
+          this.tommyGun.translateZ(-0.04 * Math.sin(performance.now() * 0.01));
+        }
       }
 
       this.applyCameraBounce(deltaTime);
+
+      this.checkSphereNpcCollision();
+
+      // PLAY ANIMATION NPC
+      if (this.scene.children.length > 0) {
+        for (let i = 0; i < this.scene.children.length; i++) {
+          const child = this.scene.children[i] as any;
+          if ((child as any).mixer) {
+            (child as any).mixer.update(deltaTime);
+          }
+        }
+      }
+
+      // this.randomMoveNPC(deltaTime);
+      this.npcChasePlayer(deltaTime);
+      this.updateCapsuleMesh();
     }
 
     this.renderer.render(this.scene, this.camera);
   }
 
+  updateCapsuleMesh() {
+    if (this.npcMeshCapsule && this.npc_capsule) {
+      this.npcMeshCapsule.position.copy(this.npc_capsule.end);
+
+      // console.log(this.npc_capsule.end);
+    }
+  }
+
+  // MARK:HIT NPC
+  checkSphereNpcCollision() {
+    if (!this.npc || !this.npc_capsule) return;
+
+    for (const sphere of this.spheres) {
+      const distance = sphere.collider.center.distanceTo(this.npc_capsule.end);
+      const combinedRadius = sphere.collider.radius + this.npc_capsule.radius;
+
+      if (distance < combinedRadius) {
+        this.removeNpc();
+        break;
+      }
+    }
+  }
+
+  removeNpc() {
+    if (this.npc) {
+      this.scene.remove(this.npc);
+      this.npc = null;
+      this.npc_capsule = null;
+      console.log('NPC removed');
+
+      // Add a new NPC after removing the old one
+      setTimeout(() => {
+        this.addRandomNPC(
+          'assets/models/Demon.fbx',
+          { x: 0.002, y: 0.002, z: 0.002 },
+          'Bite_Front'
+        );
+      }, 2000);
+    }
+  }
+
+  randomMoveNPC(deltaTime: number) {
+    if (!this.npc || !this.npc_capsule) return;
+
+    const speed = 8;
+    const directionChangeProbability = 0.05;
+
+    if (Math.random() < directionChangeProbability) {
+      const angle = Math.random() * 2 * Math.PI;
+      this.npcDirection.set(Math.cos(angle), 0, Math.sin(angle));
+    }
+
+    const moveDistance = speed * deltaTime;
+    this.npcVelocity.add(
+      this.npcDirection.clone().multiplyScalar(moveDistance)
+    );
+
+    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
+    this.npc_capsule.translate(deltaPosition);
+
+    this.npcCollisions();
+
+    this.npc.position.copy(this.npc_capsule.end);
+  }
+
+  npcChasePlayer(deltaTime: number) {
+    if (!this.npc || !this.npc_capsule) return;
+
+    const chaseSpeed = 5;
+    const playerPosition = this.camera.position.clone();
+    const npcPosition = this.npc_capsule.end.clone();
+
+    const directionToPlayer = playerPosition.sub(npcPosition).normalize();
+    const moveDistance = chaseSpeed * deltaTime;
+
+    this.npcVelocity.add(directionToPlayer.multiplyScalar(moveDistance));
+
+    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
+    this.npc_capsule.translate(deltaPosition);
+
+    this.npcCollisions();
+
+    this.npc.position.copy(this.npc_capsule.end);
+  }
   //MARK:INIT SCENE
   initScene() {
     this.renderer = new THREE.WebGLRenderer();
@@ -128,6 +260,10 @@ export class GameFpsNewComponent implements OnInit {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xa8def0);
+
+    // Tambahkan AxesHelper
+    this.axesHelper = new THREE.AxesHelper(5);
+    this.scene.add(this.axesHelper);
 
     // Create a grid
     // var gridHelper = new THREE.GridHelper(40, 40);
@@ -170,6 +306,14 @@ export class GameFpsNewComponent implements OnInit {
     this.addLight();
 
     this.listenKeyboard();
+
+    this.addRandomNPC(
+      'assets/models/Demon.fbx',
+      { x: 0.002, y: 0.002, z: 0.002 },
+      'Bite_Front'
+    );
+    // for (let i = 0; i < 10; i++) {
+    // }
   }
 
   listenKeyboard() {
@@ -218,85 +362,38 @@ export class GameFpsNewComponent implements OnInit {
       object.scale.set(0.01, 0.01, 0.01);
       this.scene.add(object);
       this.tommyGun = object;
-
-      setTimeout(() => {
-        this.tommyGun.position.copy(this.camera.position);
-        this.tommyGun.rotation.copy(this.camera.rotation);
-        this.tommyGun.updateMatrix();
-        this.tommyGun.translateZ(-0.05);
-        this.tommyGun.translateY(-0.05);
-        this.tommyGun.translateX(-0.03);
-        this.tommyGun.rotateY(Math.PI / 3);
-        this.tommyGun.rotation.y = -3.1;
-
-        const gui = new GUI({ width: 300 });
-
-        const rotationFolder = gui.addFolder('Rotation');
-        rotationFolder
-          .add(object.rotation, 'x', -Math.PI, Math.PI)
-          .onChange((value: any) => {
-            this.tommyGun.rotation.x = value;
-          });
-        rotationFolder
-          .add(object.rotation, 'y', -Math.PI, 10)
-          .onChange((value: any) => {
-            this.tommyGun.rotation.y = value;
-          });
-        rotationFolder
-          .add(object.rotation, 'z', -Math.PI, Math.PI)
-          .onChange((value: any) => {
-            this.tommyGun.rotation.z = value;
-          });
-        rotationFolder.open();
-
-        // const scaleFolder = gui.addFolder('Scale');
-        // scaleFolder.add(object.scale, 'x', -10, 2).onChange((value: any) => {
-        //   this.tommyGun.scale.x = value;
-        // });
-        // scaleFolder.add(object.scale, 'y', -10, 2).onChange((value: any) => {
-        //   this.tommyGun.scale.y = value;
-        // });
-        // scaleFolder.add(object.scale, 'z', -10, 2).onChange((value: any) => {
-        //   this.tommyGun.scale.z = value;
-        // });
-        // scaleFolder.open();
-
-        const positionFolder = gui.addFolder('Position');
-        gui.add(object.position, 'x', 0.01, 10).onChange((value: any) => {
-          this.tommyGun.position.x = value;
-        });
-        gui.add(object.position, 'y', 0.01, 10).onChange((value: any) => {
-          this.tommyGun.position.y = value;
-        });
-        gui.add(object.position, 'z', 0.01, 10).onChange((value: any) => {
-          this.tommyGun.position.z = value;
-        });
-
-        positionFolder.open();
-      }, 2000);
     });
   }
 
   throwBall() {
-    const sphere: any = this.spheres[this.sphereIdx];
+    if (this.ammoCount > 0) {
+      const sphere: any = this.spheres[this.sphereIdx];
 
-    this.camera.getWorldDirection(this.playerDirection);
+      this.camera.getWorldDirection(this.playerDirection);
 
-    sphere.collider.center
-      .copy(this.playerCollider.end)
-      .addScaledVector(this.playerDirection, this.playerCollider.radius * 1.5);
+      sphere.collider.center
+        .copy(this.playerCollider.end)
+        .addScaledVector(
+          this.playerDirection,
+          this.playerCollider.radius * 1.5
+        );
 
-    // throw the ball with more force if we hold the button longer, and if we move forward
+      // throw the ball with more force if we hold the button longer, and if we move forward
 
-    const impulse =
-      this.speed * (1 - Math.exp((this.mouseTime - performance.now()) * 0.001));
+      const impulse =
+        this.speed *
+        (1 - Math.exp((this.mouseTime - performance.now()) * 0.001));
 
-    sphere.velocity.copy(this.playerDirection).multiplyScalar(impulse);
-    sphere.velocity.addScaledVector(this.playerVelocity, 2);
+      sphere.velocity.copy(this.playerDirection).multiplyScalar(impulse);
+      sphere.velocity.addScaledVector(this.playerVelocity, 2);
 
-    this.sphereIdx = (this.sphereIdx + 1) % this.spheres.length;
+      this.sphereIdx = (this.sphereIdx + 1) % this.spheres.length;
 
-    this.removeSphereAfterDelay(sphere, 2000);
+      this.ammoCount--; // Decrease ammo count
+      this.removeSphereAfterDelay(sphere, 2000);
+    } else {
+      console.log('Out of ammo!');
+    }
   }
 
   removeSphereAfterDelay(sphere: any, delay: number) {
@@ -457,6 +554,20 @@ export class GameFpsNewComponent implements OnInit {
         .onChange((value) => {
           this.speed = value;
         });
+
+      const config = gui.addFolder('CONFIG WEAPON');
+      config.add(this.weaponPosisiton, 'x', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.x = value;
+      });
+      config.add(this.weaponPosisiton, 'y', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.y = value;
+      });
+      config.add(this.weaponPosisiton, 'z', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.z = value;
+      });
+      config.add(this.weaponPosisiton, 'pi', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.pi = value;
+      });
     });
   }
 
@@ -467,6 +578,8 @@ export class GameFpsNewComponent implements OnInit {
 
     if (result) {
       this.playerOnFloor = result.normal.y > 0;
+
+      // console.log(result);
 
       if (!this.playerOnFloor) {
         this.playerVelocity.addScaledVector(
@@ -546,6 +659,10 @@ export class GameFpsNewComponent implements OnInit {
     // gives a bit of air control
     const speedDelta = deltaTime * (this.playerOnFloor ? 20 : 8);
 
+    if (this.keyStates['KeyR']) {
+      this.reloadWeapon();
+    }
+
     if (this.keyStates['KeyW']) {
       this.playerVelocity.add(
         this.getForwardVector().multiplyScalar(speedDelta)
@@ -584,8 +701,8 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   applyCameraBounce(deltaTime: number) {
-    const bounceSpeed = 5;
-    const bounceHeight = 0.1;
+    const bounceSpeed = 2;
+    const bounceHeight = 1.5;
 
     if (
       this.playerOnFloor &&
@@ -599,6 +716,22 @@ export class GameFpsNewComponent implements OnInit {
         bounceHeight *
         deltaTime;
       this.tommyGun.position.y += bounce;
+    }
+  }
+
+  reloadWeapon() {
+    if (this.tommyGun) {
+      // Play reload animation or sound here if available
+      console.log('Reloading weapon...');
+      this.isReload = true;
+
+      // Simulate reload time
+      setTimeout(() => {
+        console.log('Weapon reloaded');
+        this.ammoCount = 24;
+        this.isReload = false;
+        // Reset ammo count or any other necessary state here
+      }, 2000); // Example reload time of 2 seconds
     }
   }
 
@@ -618,6 +751,126 @@ export class GameFpsNewComponent implements OnInit {
       this.playerCollider.radius = 0.35;
       this.camera.position.copy(this.playerCollider.end);
       this.camera.rotation.set(0, 0, 0);
+    }
+  }
+
+  // MARK:ADD NPC
+  addRandomNPC(
+    modelPath: string,
+    scale: { x: number; y: number; z: number },
+    animation: string
+  ) {
+    const loader = new FBXLoader();
+    loader.load(modelPath, (object: any) => {
+      object.mixer = new THREE.AnimationMixer(object);
+
+      object.traverse((child: any) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      const npc = object;
+      // npc.position.set(
+      //   Math.random() * 100 - 50, // Random x position between -50 and 50
+      //   0, // y position
+      //   Math.random() * 100 - 50 // Random z position between -50 and 50
+      // );
+      // npc.scale.set(scale.x, scale.y, scale.z);
+      // npc.animations = object.animations;
+
+      npc.position.set(0, 0, 0);
+      npc.scale.set(scale.x, scale.y, scale.z);
+      npc.animations = object.animations;
+
+      this.npc_capsule = new Capsule(
+        new THREE.Vector3(0, 0.35, 0),
+        new THREE.Vector3(0, 1, 0),
+        0.35
+      );
+
+      const npcCapsuleGeometry = new THREE.CylinderGeometry(
+        0.35,
+        0.35,
+        0.65,
+        8
+      );
+      const npcCapsuleMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        wireframe: true,
+      });
+      const npcCapsuleMesh = new THREE.Mesh(
+        npcCapsuleGeometry,
+        npcCapsuleMaterial
+      );
+      npcCapsuleMesh.position.copy(this.npc_capsule.end);
+      this.scene.add(npcCapsuleMesh);
+      this.npcMeshCapsule = npcCapsuleMesh;
+
+      this.npc = npc;
+      this.playAnimation(animation, npc);
+      this.scene.add(npc);
+    });
+  }
+
+  //MARK:UPDATE NPC
+  updateNPC(deltaTime: any) {
+    let damping = Math.exp(-4 * deltaTime) - 1;
+
+    if (!this.npcOnFloor) {
+      this.npcVelocity.y -= 2 * deltaTime;
+
+      // small air resistance
+      damping *= 0.003;
+    }
+
+    this.npcVelocity.addScaledVector(this.npcVelocity, damping);
+
+    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
+    this.npc_capsule.translate(deltaPosition);
+
+    this.npcCollisions();
+
+    this.npc.position.copy(this.npc_capsule.end);
+  }
+
+  npcCollisions() {
+    if (!this.npc_capsule) return;
+
+    const result = this.worldOctree.capsuleIntersect(this.npc_capsule);
+
+    this.npcOnFloor = false;
+
+    if (result) {
+      this.npcOnFloor = result.normal.y > 0;
+
+      if (!this.npcOnFloor) {
+        this.npcVelocity.addScaledVector(
+          result.normal,
+          -result.normal.dot(this.npcVelocity)
+        );
+      }
+
+      // console.log(result.depth);
+      if (result.depth >= 1e-10) {
+        this.npc_capsule.translate(result.normal.multiplyScalar(result.depth));
+      }
+      // this.npc_capsule.translate(result.normal.multiplyScalar(result.depth));
+    }
+  }
+
+  playAnimation(name: string, model: any) {
+    if (!model || !model.mixer) {
+      console.error('Model or mixer not loaded');
+      return;
+    }
+
+    const clip = model.animations.find((clip: any) => clip.name.includes(name));
+    if (clip) {
+      const action = model.mixer.clipAction(clip);
+      action.reset().play();
+    } else {
     }
   }
 }
