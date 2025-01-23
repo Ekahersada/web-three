@@ -96,18 +96,27 @@ export class GameFpsNewComponent implements OnInit {
 
   isReload: boolean = false;
 
-  npc_capsule: any;
-
-  npc: any;
+  npc: {
+    object: any;
+    capsule: any;
+    meshCapsule: any;
+    velocity: any;
+    direction: any;
+    onFloor: false;
+  }[] = [];
 
   npcMeshCapsule: any;
 
   spawnPosition: boolean = false;
+  kill: number = 0;
 
   private joystick: any;
 
   private isDragging: boolean = false;
   private previousMousePosition: { x: number; y: number } | null = null;
+
+  meshShow: boolean = false;
+  isDead: boolean = false;
 
   constructor() {}
 
@@ -132,7 +141,7 @@ export class GameFpsNewComponent implements OnInit {
 
       this.updatePlayer(deltaTime);
 
-      if (this.npc && this.npc_capsule) {
+      if (this.npc.length > 0) {
         this.updateNPC(deltaTime);
       }
 
@@ -152,7 +161,10 @@ export class GameFpsNewComponent implements OnInit {
 
         if (this.isReload) {
           // Apply reload effect, e.g., hide the gun or play reload animation
-          this.tommyGun.translateZ(-0.04 * Math.sin(performance.now() * 0.01));
+          this.tommyGun.translateZ(-0.01 * Math.sin(performance.now() * 0.01));
+          this.tommyGun.rotateX(Math.random() * 0.1 - 0.05); // Randomly rotate the gun around the X-axis
+          this.tommyGun.rotateY(Math.random() * 0.1 - 0.05); // Randomly rotate the gun around the Y-axis
+          this.tommyGun.rotateZ(Math.random() * 0.1 - 0.05); // Randomly rotate the gun around the Z-axis
         }
       }
 
@@ -170,52 +182,61 @@ export class GameFpsNewComponent implements OnInit {
         }
       }
 
-      // this.randomMoveNPC(deltaTime);
-      this.npcChasePlayer(deltaTime);
-      this.updateCapsuleMesh();
+      this.randomMoveNPC(deltaTime);
+      // this.npcChasePlayer(deltaTime);
+
+      if (this.meshShow) {
+        this.updateCapsuleMesh();
+      }
     }
 
     this.renderer.render(this.scene, this.camera);
   }
 
   updateCapsuleMesh() {
-    if (this.npcMeshCapsule && this.npc_capsule) {
-      this.npcMeshCapsule.position.copy(this.npc_capsule.end);
+    if (this.npc.length === 0) return;
 
-      // console.log(this.npc_capsule.end);
-    }
+    this.npc.forEach((npcData: any) => {
+      if (npcData.meshCapsule && npcData.capsule) {
+        npcData.meshCapsule.position.copy(npcData.capsule.end);
+      }
+    });
   }
 
   // MARK:HIT NPC
   checkSphereNpcCollision() {
-    if (!this.npc || !this.npc_capsule) return;
+    if (!this.npc || this.npc.length === 0) return;
 
-    for (const sphere of this.spheres) {
-      const distance = sphere.collider.center.distanceTo(this.npc_capsule.end);
-      const combinedRadius = sphere.collider.radius + this.npc_capsule.radius;
+    for (const npcData of this.npc) {
+      for (const sphere of this.spheres) {
+        const distance = sphere.collider.center.distanceTo(npcData.capsule.end);
+        const combinedRadius = sphere.collider.radius + npcData.capsule.radius;
 
-      if (distance < combinedRadius) {
-        this.removeNpc();
-        break;
+        if (distance < combinedRadius) {
+          this.kill++;
+          this.removeNpc(npcData);
+          break;
+        }
       }
     }
   }
 
-  removeNpc() {
-    if (this.npc) {
-      this.scene.remove(this.npc);
-      this.npc = null;
-      this.npc_capsule = null;
-      console.log('NPC removed');
+  removeNpc(npcData?: any) {
+    if (npcData && this.npc.length > 0) {
+      if (npcData.object) {
+        this.scene.remove(npcData.object);
+        this.npc = this.npc.filter((npc) => npc !== npcData);
+        console.log('NPC removed');
 
-      // Add a new NPC after removing the old one
-      setTimeout(() => {
-        this.addRandomNPC(
-          'assets/models/Demon.fbx',
-          { x: 0.002, y: 0.002, z: 0.002 },
-          'Bite_Front'
-        );
-      }, 2000);
+        // Add a new NPC after removing the old one
+        setTimeout(() => {
+          this.addRandomNPC(
+            'assets/models/Demon.fbx',
+            { x: 0.002, y: 0.002, z: 0.002 },
+            'Bite_Front'
+          );
+        }, 2000);
+      }
     }
   }
 
@@ -279,47 +300,73 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   randomMoveNPC(deltaTime: number) {
-    if (!this.npc || !this.npc_capsule) return;
+    if (!this.npc || this.npc.length === 0) return;
 
     const speed = 8;
-    const directionChangeProbability = 0.05;
+    const directionChangeInterval = 2; // Change direction every 2 seconds
+    const directionChangeProbability = 0.02; // Probability of changing direction
 
-    if (Math.random() < directionChangeProbability) {
-      const angle = Math.random() * 2 * Math.PI;
-      this.npcDirection.set(Math.cos(angle), 0, Math.sin(angle));
-    }
+    this.npc.forEach((npcData: any) => {
+      if (!npcData.lastDirectionChangeTime) {
+        npcData.lastDirectionChangeTime = performance.now();
+      }
 
-    const moveDistance = speed * deltaTime;
-    this.npcVelocity.add(
-      this.npcDirection.clone().multiplyScalar(moveDistance)
-    );
+      const timeSinceLastChange =
+        performance.now() - npcData.lastDirectionChangeTime;
 
-    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
-    this.npc_capsule.translate(deltaPosition);
+      if (
+        timeSinceLastChange > directionChangeInterval * 1000 ||
+        Math.random() < directionChangeProbability
+      ) {
+        const angle = Math.random() * 2 * Math.PI;
+        npcData.direction.set(Math.cos(angle), 0, Math.sin(angle));
+        npcData.lastDirectionChangeTime = performance.now();
+      }
 
-    this.npcCollisions();
+      const moveDistance = speed * deltaTime;
+      npcData.velocity.add(
+        npcData.direction.clone().multiplyScalar(moveDistance)
+      );
 
-    this.npc.position.copy(this.npc_capsule.end);
+      const deltaPosition = npcData.velocity.clone().multiplyScalar(deltaTime);
+      npcData.capsule.translate(deltaPosition);
+
+      this.npcCollisions(npcData);
+
+      npcData.object.position.copy(npcData.capsule.end);
+
+      // Rotate NPC to face the direction of movement
+      if (npcData.direction.length() > 0) {
+        const targetRotation = Math.atan2(
+          npcData.direction.x,
+          npcData.direction.z
+        );
+        npcData.object.rotation.y = targetRotation;
+      }
+    });
   }
 
+  //NPC mengejar player
   npcChasePlayer(deltaTime: number) {
-    if (!this.npc || !this.npc_capsule) return;
+    if (!this.npc || this.npc.length === 0) return;
 
     const chaseSpeed = 5;
     const playerPosition = this.camera.position.clone();
-    const npcPosition = this.npc_capsule.end.clone();
 
-    const directionToPlayer = playerPosition.sub(npcPosition).normalize();
-    const moveDistance = chaseSpeed * deltaTime;
+    this.npc.forEach((npcData: any) => {
+      const npcPosition = npcData.capsule.end.clone();
+      const directionToPlayer = playerPosition.sub(npcPosition).normalize();
+      const moveDistance = chaseSpeed * deltaTime;
 
-    this.npcVelocity.add(directionToPlayer.multiplyScalar(moveDistance));
+      npcData.velocity.add(directionToPlayer.multiplyScalar(moveDistance));
 
-    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
-    this.npc_capsule.translate(deltaPosition);
+      const deltaPosition = npcData.velocity.clone().multiplyScalar(deltaTime);
+      npcData.capsule.translate(deltaPosition);
 
-    this.npcCollisions();
+      this.npcCollisions(npcData);
 
-    this.npc.position.copy(this.npc_capsule.end);
+      npcData.object.position.copy(npcData.capsule.end);
+    });
   }
   //MARK:INIT SCENE
   initScene() {
@@ -378,14 +425,14 @@ export class GameFpsNewComponent implements OnInit {
     this.listenKeyboard();
 
     setTimeout(() => {
-      this.addRandomNPC(
-        'assets/models/Demon.fbx',
-        { x: 0.002, y: 0.002, z: 0.002 },
-        'Bite_Front'
-      );
+      for (let i = 0; i < 10; i++) {
+        this.addRandomNPC(
+          'assets/models/Demon.fbx',
+          { x: 0.002, y: 0.002, z: 0.002 },
+          'Bite_Front'
+        );
+      }
     }, 8000);
-    // for (let i = 0; i < 10; i++) {
-    // }
   }
 
   listenKeyboard() {
@@ -668,23 +715,29 @@ export class GameFpsNewComponent implements OnInit {
 
       // CASE NPC TABRAK pLAYER
 
-      if (this.npc_capsule) {
+      if (this.npc.length > 0) {
         const playerCenter = this.vector1
           .addVectors(this.playerCollider.start, this.playerCollider.end)
           .multiplyScalar(0.5);
 
-        const npcCenter = this.vector2
-          .addVectors(this.npc_capsule.start, this.npc_capsule.end)
-          .multiplyScalar(0.5);
+        for (const npcData of this.npc) {
+          const npcCenter = this.vector2
+            .addVectors(npcData.capsule.start, npcData.capsule.end)
+            .multiplyScalar(0.5);
 
-        const distance = playerCenter.distanceTo(npcCenter);
-        const combinedRadius =
-          this.playerCollider.radius + this.npc_capsule.radius;
+          const distance = playerCenter.distanceTo(npcCenter);
+          const combinedRadius =
+            this.playerCollider.radius + npcData.capsule.radius;
 
-        if (!this.spawnPosition) {
-          if (distance < combinedRadius) {
-            this.spawnPosition = true;
-            this.teleportPlayerIfOob();
+          if (!this.spawnPosition) {
+            if (distance < combinedRadius) {
+              this.isDead = true;
+              setTimeout(() => {
+                this.spawnPosition = true;
+                this.teleportPlayerIfOob();
+              }, 3000);
+              break;
+            }
           }
         }
       }
@@ -753,6 +806,7 @@ export class GameFpsNewComponent implements OnInit {
   movement(deltaTime: any) {
     // gives a bit of air control
     const speedDelta = deltaTime * (this.playerOnFloor ? 20 : 8);
+    if (this.isDead) return;
 
     if (this.keyStates['KeyR']) {
       this.reloadWeapon();
@@ -850,6 +904,7 @@ export class GameFpsNewComponent implements OnInit {
     this.playerCollider.radius = 0.35;
     this.camera.position.copy(this.playerCollider.end);
     this.camera.rotation.set(0, 0, 0);
+    this.kill = 0;
 
     // const randomX = Math.random() * 10 - 10; // Random x position between -50 and 50
     // const randomZ = Math.random() * 10 - 10; // Random z position between -50 and 50
@@ -857,6 +912,7 @@ export class GameFpsNewComponent implements OnInit {
     // this.playerCollider.end.set(randomX, 1, randomZ);
     // this.camera.position.copy(this.playerCollider.end);
 
+    this.isDead = false;
     setTimeout(() => {
       this.spawnPosition = false;
     }, 3000);
@@ -881,19 +937,12 @@ export class GameFpsNewComponent implements OnInit {
       });
 
       const npc = object;
-      // npc.position.set(
-      //   Math.random() * 100 - 50, // Random x position between -50 and 50
-      //   0, // y position
-      //   Math.random() * 100 - 50 // Random z position between -50 and 50
-      // );
-      // npc.scale.set(scale.x, scale.y, scale.z);
-      // npc.animations = object.animations;
 
-      npc.position.set(0, 0, 0);
+      // npc.position.set(0, 0, 0);
       npc.scale.set(scale.x, scale.y, scale.z);
       npc.animations = object.animations;
 
-      this.npc_capsule = new Capsule(
+      const npcCapsule = new Capsule(
         new THREE.Vector3(0, 0.35, 0),
         new THREE.Vector3(0, 1, 0),
         0.35
@@ -913,11 +962,20 @@ export class GameFpsNewComponent implements OnInit {
         npcCapsuleGeometry,
         npcCapsuleMaterial
       );
-      npcCapsuleMesh.position.copy(this.npc_capsule.end);
-      this.scene.add(npcCapsuleMesh);
-      this.npcMeshCapsule = npcCapsuleMesh;
+      npcCapsuleMesh.position.copy(npcCapsule.end);
 
-      this.npc = npc;
+      // this.scene.add(npcCapsuleMesh);
+
+      this.npc = this.npc || [];
+      this.npc.push({
+        object: npc,
+        capsule: npcCapsule,
+        meshCapsule: npcCapsuleMesh,
+        velocity: new THREE.Vector3(),
+        direction: new THREE.Vector3(),
+        onFloor: false,
+      });
+
       this.playAnimation(animation, npc);
       this.scene.add(npc);
     });
@@ -925,47 +983,49 @@ export class GameFpsNewComponent implements OnInit {
 
   //MARK:UPDATE NPC
   updateNPC(deltaTime: any) {
-    let damping = Math.exp(-4 * deltaTime) - 1;
+    if (!this.npc || this.npc.length === 0) return;
 
-    if (!this.npcOnFloor) {
-      this.npcVelocity.y -= 2 * deltaTime;
+    this.npc.forEach((npcData: any) => {
+      let damping = Math.exp(-4 * deltaTime) - 1;
 
-      // small air resistance
-      damping *= 0.003;
-    }
+      if (!npcData.onFloor) {
+        npcData.velocity.y -= 2 * deltaTime;
 
-    this.npcVelocity.addScaledVector(this.npcVelocity, damping);
+        // small air resistance
+        damping *= 0.003;
+      }
 
-    const deltaPosition = this.npcVelocity.clone().multiplyScalar(deltaTime);
-    this.npc_capsule.translate(deltaPosition);
+      npcData.velocity.addScaledVector(npcData.velocity, damping);
 
-    this.npcCollisions();
+      const deltaPosition = npcData.velocity.clone().multiplyScalar(deltaTime);
+      npcData.capsule.translate(deltaPosition);
 
-    this.npc.position.copy(this.npc_capsule.end);
+      this.npcCollisions(npcData);
+
+      npcData.object.position.copy(npcData.capsule.end);
+    });
   }
 
-  npcCollisions() {
-    if (!this.npc_capsule) return;
+  npcCollisions(npcData: any) {
+    if (!npcData || !npcData.capsule) return;
 
-    const result = this.worldOctree.capsuleIntersect(this.npc_capsule);
+    const result = this.worldOctree.capsuleIntersect(npcData.capsule);
 
-    this.npcOnFloor = false;
+    npcData.onFloor = false;
 
     if (result) {
-      this.npcOnFloor = result.normal.y > 0;
+      npcData.onFloor = result.normal.y > 0;
 
-      if (!this.npcOnFloor) {
-        this.npcVelocity.addScaledVector(
+      if (!npcData.onFloor) {
+        npcData.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(this.npcVelocity)
+          -result.normal.dot(npcData.velocity)
         );
       }
 
-      // console.log(result.depth);
       if (result.depth >= 1e-10) {
-        this.npc_capsule.translate(result.normal.multiplyScalar(result.depth));
+        npcData.capsule.translate(result.normal.multiplyScalar(result.depth));
       }
-      // this.npc_capsule.translate(result.normal.multiplyScalar(result.depth));
     }
   }
 

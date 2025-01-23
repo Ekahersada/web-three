@@ -1,4 +1,9 @@
 <div class="bx-ammo fixed z-[1]">Ammo:{{ammoCount}}</div>
+<div class="fixed top-0 z-10 p-4 rounded-xl bg-white bg-opacity-50">Score: {{kill}}</div>
+<div *ngIf="isDead"
+  class="fixed w-full flex justify-center items-center text-[26px] bg-red-500 bg-opacity-50 p-4 h-full rounded-lg m-auto z-10">
+  Your Dead...
+</div>
 <div #joystickContainer class="joystick grid place-items-center">
   <span class="opacity-50"></span>
 </div>
