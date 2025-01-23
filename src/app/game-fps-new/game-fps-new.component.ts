@@ -189,7 +189,6 @@ export class GameFpsNewComponent implements OnInit {
         this.updateCapsuleMesh();
       }
     }
-
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -402,7 +401,7 @@ export class GameFpsNewComponent implements OnInit {
     this.pointerLock();
     this.loadGun();
 
-    for (let i = 0; i < this.NUM_SPHERES; i++) {
+    for (let i = 0; i <= this.ammoCount; i++) {
       const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
       sphere.castShadow = true;
       sphere.receiveShadow = true;
@@ -877,6 +876,23 @@ export class GameFpsNewComponent implements OnInit {
       // Play reload animation or sound here if available
       console.log('Reloading weapon...');
       this.isReload = true;
+
+      for (let i = 0; i <= 24; i++) {
+        const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
+        sphere.castShadow = true;
+        sphere.receiveShadow = true;
+
+        this.scene.add(sphere);
+
+        this.spheres.push({
+          mesh: sphere,
+          collider: new THREE.Sphere(
+            new THREE.Vector3(0, -100, 0),
+            this.SPHERE_RADIUS
+          ),
+          velocity: new THREE.Vector3(),
+        });
+      }
 
       // Simulate reload time
       setTimeout(() => {
