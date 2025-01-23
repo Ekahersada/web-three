@@ -302,7 +302,7 @@ export class GameFpsNewComponent implements OnInit {
   randomMoveNPC(deltaTime: number) {
     if (!this.npc || this.npc.length === 0) return;
 
-    const speed = 8;
+    const speed = 10;
     const directionChangeInterval = 2; // Change direction every 2 seconds
     const directionChangeProbability = 0.02; // Probability of changing direction
 
@@ -425,7 +425,7 @@ export class GameFpsNewComponent implements OnInit {
     this.listenKeyboard();
 
     setTimeout(() => {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         this.addRandomNPC(
           'assets/models/Demon.fbx',
           { x: 0.002, y: 0.002, z: 0.002 },
