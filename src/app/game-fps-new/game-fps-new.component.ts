@@ -13,6 +13,8 @@ import {
 import { GUI } from 'dat.gui';
 
 import nipplejs from 'nipplejs';
+import { LoadersService } from '../shared/loaders.service';
+import { ResourcesTemp } from './resource';
 
 @Component({
   selector: 'app-game-fps-new',
@@ -36,6 +38,9 @@ export class GameFpsNewComponent implements OnInit {
   private axesHelper!: THREE.AxesHelper;
   renderer = new THREE.WebGLRenderer();
 
+  public progress: number = 0;
+  public loadingComplete: boolean = false;
+
   controls: any;
 
   private Mainplayer!: THREE.Mesh;
@@ -48,7 +53,7 @@ export class GameFpsNewComponent implements OnInit {
 
   STEPS_PER_FRAME = 5;
 
-  speed = 70;
+  speed = 120;
 
   worldOctree = new Octree();
 
@@ -85,9 +90,16 @@ export class GameFpsNewComponent implements OnInit {
 
   keyStates: any = {};
 
-  weaponPosisiton: any = {
+  weaponPosisiton_portal: any = {
     x: 0.032,
     y: -0.032,
+    z: -0.09,
+    pi: 0.04,
+  };
+
+  weaponPosisiton: any = {
+    x: 0.032,
+    y: -1.41,
     z: -0.09,
     pi: 0.04,
   };
@@ -118,13 +130,37 @@ export class GameFpsNewComponent implements OnInit {
   meshShow: boolean = false;
   isDead: boolean = false;
 
-  constructor() {}
+  obj_glb: any[] = [];
+
+  constructor(private LoaderService: LoadersService) {
+    this.LoaderService.onProgress.subscribe((progress) => {
+      this.progress = progress.toFixed(2) as any;
+    });
+
+    this.LoaderService.onLoadComplete.subscribe(() => {
+      setTimeout(() => {
+        this.loadingComplete = true;
+        this.initScene();
+        this.animate();
+      }, 1000);
+      // this.setupTouchControls();
+    });
+  }
 
   ngOnInit() {
-    this.initScene();
-    this.animate();
+    this.LoaderService.initLoader();
+    this.LoaderService.loadMultipleObj(ResourcesTemp.assets_obj);
+    this.LoaderService.loadMultipleFbx(ResourcesTemp.assets_fbx);
+    this.LoaderService.loadMultipleGltf(ResourcesTemp.assets_glb).then(
+      (res) => {
+        this.obj_glb = res;
+      }
+    );
     this.initJoystick();
     this.setupTouchControls();
+
+    // this.initScene();
+    // this.animate();
   }
 
   //MARK:ANIMATE
@@ -183,6 +219,7 @@ export class GameFpsNewComponent implements OnInit {
       }
 
       this.randomMoveNPC(deltaTime);
+      // console.log(this.kill);
       // this.npcChasePlayer(deltaTime);
 
       if (this.meshShow) {
@@ -398,9 +435,6 @@ export class GameFpsNewComponent implements OnInit {
     this.camera.near = 0.015; // Set a smaller value, like 0.1
     this.camera.updateProjectionMatrix();
 
-    this.pointerLock();
-    this.loadGun();
-
     for (let i = 0; i <= this.ammoCount; i++) {
       const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
       sphere.castShadow = true;
@@ -417,21 +451,22 @@ export class GameFpsNewComponent implements OnInit {
         velocity: new THREE.Vector3(),
       });
     }
-
-    this.loadMap();
     this.addLight();
+    this.pointerLock();
+    this.loadMap();
+    this.loadGun();
 
     this.listenKeyboard();
 
-    setTimeout(() => {
-      for (let i = 0; i < 20; i++) {
-        this.addRandomNPC(
-          'assets/models/Demon.fbx',
-          { x: 0.002, y: 0.002, z: 0.002 },
-          'Bite_Front'
-        );
-      }
-    }, 8000);
+    // setTimeout(() => {
+    //   for (let i = 0; i < 20; i++) {
+    //     this.addRandomNPC(
+    //       'assets/models/Demon.fbx',
+    //       { x: 0.002, y: 0.002, z: 0.002 },
+    //       'Bite_Front'
+    //     );
+    //   }
+    // }, 8000);
   }
 
   listenKeyboard() {
@@ -475,18 +510,56 @@ export class GameFpsNewComponent implements OnInit {
     //   this.scene.add(model);
     // });
 
-    const objLoader = new OBJLoader();
-    objLoader.load('./assets/models/gun/portal-gun.obj', (object) => {
-      object.scale.set(0.01, 0.01, 0.01);
-      this.scene.add(object);
-      this.tommyGun = object;
-    });
+    // const objLoader = new OBJLoader();
+    // objLoader.load('./assets/models/gun/portal-gun.obj', (object) => {
+    //   object.scale.set(0.01, 0.01, 0.01);
+    //   this.scene.add(object);
+    //   this.tommyGun = object;
+    // });
+
+    this.loadGunMP5();
+  }
+
+  loadGunMP5() {
+    const object = this.obj_glb.find((o) => o.name == 'mp5');
+    if (object) {
+      let obj = object.object;
+      // obj.scene.scale.set(0.01, 0.01, 0.01);
+      obj.scene.position.set(
+        this.camera.position.x,
+        this.camera.position.y,
+        this.camera.position.z - 2
+      );
+      const model = obj.scene;
+
+      console.log(obj.scene);
+
+      this.tommyGun = obj.scene;
+      this.scene.add(model);
+
+      const gui = new GUI({ width: 300 });
+
+      const config = gui.addFolder('CONFIG WEAPON');
+      config.add(this.weaponPosisiton, 'x', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.x = value;
+      });
+      config.add(this.weaponPosisiton, 'y', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.y = value;
+      });
+      config.add(this.weaponPosisiton, 'z', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.z = value;
+      });
+      config.add(this.weaponPosisiton, 'pi', -10, 10).onChange((value: any) => {
+        this.weaponPosisiton.pi = value;
+      });
+    }
   }
 
   throwBall() {
     if (this.ammoCount > 0) {
       const sphere: any = this.spheres[this.sphereIdx];
-
+      this.ammoCount--;
+      console.log(this.spheres);
       this.camera.getWorldDirection(this.playerDirection);
 
       sphere.collider.center
@@ -507,7 +580,7 @@ export class GameFpsNewComponent implements OnInit {
 
       this.sphereIdx = (this.sphereIdx + 1) % this.spheres.length;
 
-      this.ammoCount--; // Decrease ammo count
+      // Decrease ammo count
       this.removeSphereAfterDelay(sphere, 2000);
     } else {
       console.log('Out of ammo!');
@@ -515,10 +588,10 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   removeSphereAfterDelay(sphere: any, delay: number) {
-    setTimeout(() => {
-      this.scene.remove(sphere.mesh);
-      this.spheres = this.spheres.filter((s) => s !== sphere);
-    }, delay);
+    // setTimeout(() => {
+    //   this.scene.remove(sphere.mesh);
+    //   this.spheres = this.spheres.filter((s) => s !== sphere);
+    // }, delay);
   }
 
   updateSpheres(deltaTime: any) {
@@ -636,12 +709,19 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   loadMap() {
-    this.loader.load('./assets/models/collision-world.glb', (gltf: any) => {
-      this.scene.add(gltf.scene);
+    // let map = './assets/models/collision-world.glb';
+    let map = './assets/models/map_tdm.glb';
 
-      this.worldOctree.fromGraphNode(gltf.scene);
+    const object = this.obj_glb.find((o) => o.name == 'map');
+    if (object) {
+      let obj = object.object;
+      this.scene.add(obj.scene);
+      obj.scene.position.set(-1, -3, -5);
+      obj.scene.scale.set(3.7, 5.2, 4.6);
 
-      gltf.scene.traverse((child: any) => {
+      this.worldOctree.fromGraphNode(obj.scene);
+
+      obj.scene.traverse((child: any) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
@@ -651,42 +731,90 @@ export class GameFpsNewComponent implements OnInit {
           }
         }
       });
+    }
 
-      const helper = new OctreeHelper(this.worldOctree);
-      helper.visible = false;
-      this.scene.add(helper);
+    // this.loader.load(map, (gltf: any) => {
+    //   this.scene.add(gltf.scene);
+    //   gltf.scene.position.set(-1, -3, -5);
+    //   gltf.scene.scale.set(3.7, 5.2, 4.6);
 
-      const gui = new GUI({ width: 300 });
-      gui.add({ debug: false }, 'debug').onChange(function (value) {
-        helper.visible = value;
-      });
+    //   this.worldOctree.fromGraphNode(gltf.scene);
 
-      gui
-        .add({ GRAVITY: this.GRAVITY }, 'GRAVITY', 1, 100)
-        .onChange((value) => {
-          this.GRAVITY = value;
-        });
+    //   gltf.scene.traverse((child: any) => {
+    //     if (child.isMesh) {
+    //       child.castShadow = true;
+    //       child.receiveShadow = true;
 
-      gui
-        .add({ SPEED_BULLET: this.speed }, 'SPEED_BULLET', 20, 200)
-        .onChange((value) => {
-          this.speed = value;
-        });
+    //       if (child.material.map) {
+    //         child.material.map.anisotropy = 4;
+    //       }
+    //     }
+    //   });
 
-      const config = gui.addFolder('CONFIG WEAPON');
-      config.add(this.weaponPosisiton, 'x', -10, 10).onChange((value: any) => {
-        this.weaponPosisiton.x = value;
-      });
-      config.add(this.weaponPosisiton, 'y', -10, 10).onChange((value: any) => {
-        this.weaponPosisiton.y = value;
-      });
-      config.add(this.weaponPosisiton, 'z', -10, 10).onChange((value: any) => {
-        this.weaponPosisiton.z = value;
-      });
-      config.add(this.weaponPosisiton, 'pi', -10, 10).onChange((value: any) => {
-        this.weaponPosisiton.pi = value;
-      });
-    });
+    //   const helper = new OctreeHelper(this.worldOctree);
+    //   helper.visible = false;
+    //   this.scene.add(helper);
+
+    //   const gui = new GUI({ width: 300 });
+
+    //   const mapScale = { x: 1, y: 1, z: 1 }; // Default scale values
+
+    //   const mapFolder = gui.addFolder('Map Scale');
+    //   mapFolder.add(mapScale, 'x', 0.1, 10).onChange((value: any) => {
+    //     gltf.scene.scale.x = value;
+    //   });
+    //   mapFolder.add(mapScale, 'y', 0.1, 10).onChange((value: any) => {
+    //     gltf.scene.scale.y = value;
+    //   });
+    //   mapFolder.add(mapScale, 'z', 0.1, 10).onChange((value: any) => {
+    //     gltf.scene.scale.z = value;
+    //   });
+    //   mapFolder.open();
+
+    //   const mapPosition = { x: 0, y: 0, z: 0 }; // Default position values
+
+    //   const positionFolder = gui.addFolder('Map Position');
+    //   positionFolder.add(mapPosition, 'x', -100, 100).onChange((value: any) => {
+    //     gltf.scene.position.x = value;
+    //   });
+    //   positionFolder.add(mapPosition, 'y', -100, 100).onChange((value: any) => {
+    //     gltf.scene.position.y = value;
+    //   });
+    //   positionFolder.add(mapPosition, 'z', -100, 100).onChange((value: any) => {
+    //     gltf.scene.position.z = value;
+    //   });
+    //   positionFolder.open();
+
+    //   gui.add({ debug: false }, 'debug').onChange(function (value) {
+    //     helper.visible = value;
+    //   });
+
+    //   gui
+    //     .add({ GRAVITY: this.GRAVITY }, 'GRAVITY', 1, 100)
+    //     .onChange((value) => {
+    //       this.GRAVITY = value;
+    //     });
+
+    //   gui
+    //     .add({ SPEED_BULLET: this.speed }, 'SPEED_BULLET', 20, 200)
+    //     .onChange((value) => {
+    //       this.speed = value;
+    //     });
+
+    //   const config = gui.addFolder('CONFIG WEAPON');
+    //   config.add(this.weaponPosisiton, 'x', -10, 10).onChange((value: any) => {
+    //     this.weaponPosisiton.x = value;
+    //   });
+    //   config.add(this.weaponPosisiton, 'y', -10, 10).onChange((value: any) => {
+    //     this.weaponPosisiton.y = value;
+    //   });
+    //   config.add(this.weaponPosisiton, 'z', -10, 10).onChange((value: any) => {
+    //     this.weaponPosisiton.z = value;
+    //   });
+    //   config.add(this.weaponPosisiton, 'pi', -10, 10).onChange((value: any) => {
+    //     this.weaponPosisiton.pi = value;
+    //   });
+    // });
   }
 
   playerCollisions() {
@@ -728,16 +856,16 @@ export class GameFpsNewComponent implements OnInit {
           const combinedRadius =
             this.playerCollider.radius + npcData.capsule.radius;
 
-          if (!this.spawnPosition) {
-            if (distance < combinedRadius) {
-              this.isDead = true;
-              setTimeout(() => {
-                this.spawnPosition = true;
-                this.teleportPlayerIfOob();
-              }, 3000);
-              break;
-            }
-          }
+          // if (!this.spawnPosition) {
+          //   if (distance < combinedRadius) {
+          //     this.isDead = true;
+          //     setTimeout(() => {
+          //       this.spawnPosition = true;
+          //       this.teleportPlayerIfOob();
+          //     }, 3000);
+          //     break;
+          //   }
+          // }
         }
       }
     }
@@ -876,6 +1004,8 @@ export class GameFpsNewComponent implements OnInit {
       // Play reload animation or sound here if available
       console.log('Reloading weapon...');
       this.isReload = true;
+
+      this.spheres = [];
 
       for (let i = 0; i <= 24; i++) {
         const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);

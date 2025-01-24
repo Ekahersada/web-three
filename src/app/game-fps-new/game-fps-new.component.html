@@ -1,3 +1,15 @@
+<div class="w-full h-screen fixed bg-blue-800 z-[1100] flex justify-center items-center" *ngIf="!loadingComplete">
+  <div class="w-[300px]">
+    <p class="text-lg font-semibold text-blue-500">Loading Progress: {{ progress }}%</p>
+    <p *ngIf="loadingComplete" class="text-lg font-semibold text-green-500">Loading Complete!</p>
+    <div class="w-full bg-gray-300 rounded-full h-4 mt-4">
+      <div class="bg-blue-500 h-4 rounded-full" [style.width.%]="progress"></div>
+    </div>
+  </div>
+</div>
+
+
+
 <div class="bx-ammo fixed z-[1]">Ammo:{{ammoCount}}</div>
 <div class="fixed top-0 z-10 p-4 rounded-xl bg-white bg-opacity-50">Score: {{kill}}</div>
 <div *ngIf="isDead"
