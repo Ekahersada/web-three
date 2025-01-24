@@ -53,7 +53,7 @@ export class GameFpsNewComponent implements OnInit {
 
   STEPS_PER_FRAME = 5;
 
-  speed = 120;
+  speed = 200;
 
   worldOctree = new Octree();
 
