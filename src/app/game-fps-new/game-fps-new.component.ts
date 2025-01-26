@@ -15,6 +15,7 @@ import { GUI } from 'dat.gui';
 import nipplejs from 'nipplejs';
 import { LoadersService } from '../shared/loaders.service';
 import { ResourcesTemp } from './resource';
+import { HelperService } from '../shared/helper.service';
 
 @Component({
   selector: 'app-game-fps-new',
@@ -132,7 +133,10 @@ export class GameFpsNewComponent implements OnInit {
 
   obj_glb: any[] = [];
 
-  constructor(private LoaderService: LoadersService) {
+  constructor(
+    private LoaderService: LoadersService,
+    private helper: HelperService
+  ) {
     this.LoaderService.onProgress.subscribe((progress) => {
       this.progress = progress.toFixed(2) as any;
     });
@@ -148,6 +152,11 @@ export class GameFpsNewComponent implements OnInit {
   }
 
   ngOnInit() {
+    if (this.helper.lock) {
+      window.location.reload();
+    }
+    this.helper.lockFrame();
+
     this.LoaderService.initLoader();
     this.LoaderService.loadMultipleObj(ResourcesTemp.assets_obj);
     this.LoaderService.loadMultipleFbx(ResourcesTemp.assets_fbx);
@@ -458,15 +467,15 @@ export class GameFpsNewComponent implements OnInit {
 
     this.listenKeyboard();
 
-    // setTimeout(() => {
-    //   for (let i = 0; i < 20; i++) {
-    //     this.addRandomNPC(
-    //       'assets/models/Demon.fbx',
-    //       { x: 0.002, y: 0.002, z: 0.002 },
-    //       'Bite_Front'
-    //     );
-    //   }
-    // }, 8000);
+    setTimeout(() => {
+      for (let i = 0; i < 20; i++) {
+        this.addRandomNPC(
+          'assets/models/Demon.fbx',
+          { x: 0.002, y: 0.002, z: 0.002 },
+          'Bite_Front'
+        );
+      }
+    }, 10000);
   }
 
   listenKeyboard() {
@@ -856,16 +865,16 @@ export class GameFpsNewComponent implements OnInit {
           const combinedRadius =
             this.playerCollider.radius + npcData.capsule.radius;
 
-          // if (!this.spawnPosition) {
-          //   if (distance < combinedRadius) {
-          //     this.isDead = true;
-          //     setTimeout(() => {
-          //       this.spawnPosition = true;
-          //       this.teleportPlayerIfOob();
-          //     }, 3000);
-          //     break;
-          //   }
-          // }
+          if (!this.spawnPosition) {
+            if (distance < combinedRadius) {
+              this.isDead = true;
+              setTimeout(() => {
+                this.spawnPosition = true;
+                this.teleportPlayerIfOob();
+              }, 3000);
+              break;
+            }
+          }
         }
       }
     }

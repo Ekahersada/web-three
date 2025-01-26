@@ -62,6 +62,13 @@ const routes: Routes = [
         (m) => m.TestLoaderModule
       ),
   },
+  {
+    path: 'research',
+    loadChildren: () =>
+      import('./game-research/game-research.module').then(
+        (m) => m.GameResearchModule
+      ),
+  },
 ];
 
 @NgModule({
