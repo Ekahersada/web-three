@@ -56,6 +56,8 @@ export class GameResearchComponent implements OnInit {
 
   npc: any[] = [];
 
+  freeCamera = false;
+
   constructor(private helper: HelperService) {}
 
   ngOnInit() {
@@ -81,6 +83,8 @@ export class GameResearchComponent implements OnInit {
         this.movement(deltaTime);
         this.updatePlayer(deltaTime);
         this.updateCameraOrbit();
+
+        // this.npcChasePlayer(deltaTime);
       }
 
       if (this.npc.length > 0) {
@@ -145,52 +149,66 @@ export class GameResearchComponent implements OnInit {
   addLight() {
     // LIGHTS
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
-    hemiLight.color.setHSL(0.6, 1, 0.6);
-    hemiLight.groundColor.setHSL(0.095, 1, 0.75);
-    hemiLight.position.set(0, 50, 0);
-    this.scene.add(hemiLight);
+    const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white light
+    this.scene.add(ambientLight);
 
-    const hemiLightHelper = new THREE.HemisphereLightHelper(hemiLight, 10);
-    this.scene.add(hemiLightHelper);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    directionalLight.position.set(10, 10, 10);
+    directionalLight.castShadow = true;
+    this.scene.add(directionalLight);
+
+    const directionalLightHelper = new THREE.DirectionalLightHelper(
+      directionalLight,
+      5
+    );
+    this.scene.add(directionalLightHelper);
+
+    // const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
+    // hemiLight.color.setHSL(0.6, 1, 0.6);
+    // hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+    // hemiLight.position.set(0, 50, 0);
+    // this.scene.add(hemiLight);
+
+    // const hemiLightHelper = new THREE.HemisphereLightHelper(hemiLight, 10);
+    // this.scene.add(hemiLightHelper);
 
     //
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 3);
-    dirLight.color.setHSL(0.1, 1, 0.95);
-    dirLight.position.set(-1, 1.75, 1);
-    dirLight.position.multiplyScalar(30);
-    this.scene.add(dirLight);
+    // const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+    // dirLight.color.setHSL(0.1, 1, 0.95);
+    // dirLight.position.set(-1, 1.75, 1);
+    // dirLight.position.multiplyScalar(30);
+    // this.scene.add(dirLight);
 
-    dirLight.castShadow = true;
+    // dirLight.castShadow = true;
 
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
+    // dirLight.shadow.mapSize.width = 2048;
+    // dirLight.shadow.mapSize.height = 2048;
 
-    const d = 50;
+    // const d = 50;
 
-    dirLight.shadow.camera.left = -d;
-    dirLight.shadow.camera.right = d;
-    dirLight.shadow.camera.top = d;
-    dirLight.shadow.camera.bottom = -d;
+    // dirLight.shadow.camera.left = -d;
+    // dirLight.shadow.camera.right = d;
+    // dirLight.shadow.camera.top = d;
+    // dirLight.shadow.camera.bottom = -d;
 
-    dirLight.shadow.camera.far = 3500;
-    dirLight.shadow.bias = -0.0001;
+    // dirLight.shadow.camera.far = 3500;
+    // dirLight.shadow.bias = -0.0001;
 
-    const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 10);
-    this.scene.add(dirLightHelper);
+    // const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 10);
+    // this.scene.add(dirLightHelper);
 
     // GROUND
 
-    const groundGeo = new THREE.PlaneGeometry(10000, 10000);
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    groundMat.color.setHSL(0.095, 1, 0.75);
+    // const groundGeo = new THREE.PlaneGeometry(10000, 10000);
+    // const groundMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    // groundMat.color.setHSL(0.095, 1, 0.75);
 
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.position.y = -33;
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
+    // const ground = new THREE.Mesh(groundGeo, groundMat);
+    // ground.position.y = -33;
+    // ground.rotation.x = -Math.PI / 2;
+    // ground.receiveShadow = true;
+    // this.scene.add(ground);
   }
 
   setup() {
@@ -212,9 +230,11 @@ export class GameResearchComponent implements OnInit {
 
   // MARK:Update camera orbit
   updateCameraOrbit() {
-    const offset = new THREE.Vector3(10, 18, 0); // Adjust the offset as needed
+    const offset = new THREE.Vector3(20, 18, 0); // Adjust the offset as needed
     const desiredPosition = this.playerCollider.start.clone().add(offset);
-    // this.camera.position.lerp(desiredPosition, 2); // Smoothly interpolate to the desired position
+    if (!this.freeCamera) {
+      this.camera.position.lerp(desiredPosition, 0.2); // Smoothly interpolate to the desired position
+    }
     this.camera.lookAt(this.playerCollider.start); // Make the camera look at the player
 
     // Allow free pan and zoom
@@ -365,15 +385,22 @@ export class GameResearchComponent implements OnInit {
         if (object) {
           let obj = object;
           this.scene.add(obj);
-          obj.position.set(0, 0, 0);
+          obj.position.set(0, 0, -10);
           obj.scale.set(3.7, 5.2, 4.6);
+          obj.rotateY(1.6);
 
           const gui = new GUI();
           const positionFolder = gui.addFolder('Position');
           positionFolder.add(obj.position, 'x', -10, 10);
           positionFolder.add(obj.position, 'y', -10, 10);
           positionFolder.add(obj.position, 'z', -10, 10);
-          positionFolder.open();
+          // positionFolder.open();
+
+          const rotationFolder = gui.addFolder('Rotation');
+          rotationFolder.add(obj.rotation, 'x', 0, Math.PI * 2);
+          rotationFolder.add(obj.rotation, 'y', 0, Math.PI * 2);
+          rotationFolder.add(obj.rotation, 'z', 0, Math.PI * 2);
+          // rotationFolder.open();
 
           this.worldOctree.fromGraphNode(obj);
 
@@ -482,11 +509,17 @@ export class GameResearchComponent implements OnInit {
   }
 
   updateDirectionStatus(activeKeys: any) {
-    console.log(activeKeys);
     this.keyStates['KeyW'] = activeKeys.includes('w');
     this.keyStates['KeyS'] = activeKeys.includes('s');
     this.keyStates['KeyA'] = activeKeys.includes('a');
     this.keyStates['KeyD'] = activeKeys.includes('d');
+  }
+
+  Jumpt() {
+    this.keyStates['Space'] = true;
+    setTimeout(() => {
+      this.keyStates['Space'] = false;
+    }, 100);
   }
 
   //MARK: - Movement
@@ -647,5 +680,29 @@ export class GameResearchComponent implements OnInit {
         npcData.capsule.translate(result.normal.multiplyScalar(result.depth));
       }
     }
+  }
+
+  //NPC mengejar player
+  npcChasePlayer(deltaTime: number) {
+    if (!this.npc || this.npc.length === 0) return;
+
+    const chaseSpeed = 5;
+    const playerPosition = this.playerCapsule.position.clone();
+
+    this.npc.forEach((npcData: any) => {
+      const npcPosition = npcData.capsule.start.clone();
+      const directionToPlayer = playerPosition.sub(npcPosition).normalize();
+      const moveDistance = chaseSpeed * deltaTime;
+
+      npcData.velocity.add(directionToPlayer.multiplyScalar(moveDistance));
+
+      const deltaPosition = npcData.velocity.clone().multiplyScalar(deltaTime);
+      npcData.capsule.translate(deltaPosition);
+
+      this.npcCollisions(npcData);
+      // npcData.object.lookAt(playerPosition);
+
+      npcData.object.position.copy(npcData.capsule.start);
+    });
   }
 }

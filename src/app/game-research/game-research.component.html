@@ -1,4 +1,9 @@
 <div #joystickContainer class="joystick grid place-items-center">
   <span class="opacity-50"></span>
 </div>
+<div class="bg-white bg-opacity-50 rounded-2xl bottom-0 right-2 p-4 fixed z-[2]" (click)="Jumpt()">Jump</div>
+<div class="bg-white bg-opacity-50 rounded-2xl top-0  p-4 fixed z-[2]" (click)="freeCamera = !freeCamera">{{freeCamera ?
+  'Fixed Camera' : 'Free Camera'}}</div>
+
+
 <div #rendererContainer2 class="renderer-container"></div>
