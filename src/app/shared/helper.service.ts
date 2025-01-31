@@ -8,6 +8,10 @@ export class HelperService {
   constructor() {}
 
   lockFrame() {
+    if (this.lock) {
+      window.location.reload();
+      return;
+    }
     let key = Array.from({ length: 16 }, () =>
       Math.floor(Math.random() * 10)
     ).join('');

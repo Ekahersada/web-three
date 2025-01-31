@@ -61,14 +61,18 @@ export class GameResearchComponent implements OnInit {
   constructor(private helper: HelperService) {}
 
   ngOnInit() {
-    if (this.helper.lock) {
-      window.location.reload();
-    }
-    this.helper.lockFrame();
+    this.lockFrame();
 
     this.initScene();
     this.animate();
     this.initJoystick();
+  }
+
+  lockFrame() {
+    if (this.helper.lock) {
+      window.location.reload();
+    }
+    this.helper.lockFrame();
   }
 
   animate() {

@@ -69,6 +69,11 @@ const routes: Routes = [
         (m) => m.GameResearchModule
       ),
   },
+  {
+    path: 'game-grid',
+    loadChildren: () =>
+      import('./game-grid/game-grid.module').then((m) => m.GameGridModule),
+  },
 ];
 
 @NgModule({
