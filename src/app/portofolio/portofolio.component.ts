@@ -176,7 +176,7 @@ export class PortofolioComponent implements OnInit {
       gsap.from(text.chars, {
         opacity: 0.2,
         // y: 100,
-        duration: 1,
+        // duration: 1,
         stagger: 0.1,
         scrollTrigger: {
           trigger: '.contact-section',
