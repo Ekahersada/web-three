@@ -169,8 +169,6 @@ export class PortofolioComponent implements OnInit {
       },
     });
 
-    const splitTypes = gsap.utils.toArray('.split-type');
-
     document.querySelectorAll('.split-type').forEach((char: any) => {
       const text = new SplitType(char, { types: ['chars', 'words'] });
 
@@ -188,21 +186,6 @@ export class PortofolioComponent implements OnInit {
           // markers: true,
         },
       });
-    });
-
-    console.log(splitTypes);
-
-    splitTypes.forEach((splitType: any, index) => {
-      console.log(splitType);
-      // gsap.from(splitType, {
-      //   opacity: 0,
-      //   y: 100,
-      //   duration: 1,
-      //   scrollTrigger: {
-      //     trigger: splitType,
-      //     start: 'top 80%',
-      //   },
-      // });
     });
   }
 }
