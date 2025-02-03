@@ -185,7 +185,7 @@ export class PortofolioComponent implements OnInit {
           start: 'top 40%',
           end: 'top 10%',
           scrub: true,
-          markers: true,
+          // markers: true,
         },
       });
     });
