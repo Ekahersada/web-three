@@ -4,22 +4,23 @@ import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import SplitType from 'split-type';
+
+//  declare var SplitType: any;
 
 @Component({
   selector: 'app-portofolio',
   templateUrl: './portofolio.component.html',
-  styleUrls: ['./portofolio.component.scss']
+  styleUrls: ['./portofolio.component.scss'],
 })
 export class PortofolioComponent implements OnInit {
-
-
   private sphere: THREE.Mesh | undefined;
   private renderer: THREE.WebGLRenderer | undefined;
   private scene: THREE.Scene | undefined;
   private camera: THREE.PerspectiveCamera | undefined;
   // private camera: THREE.OrthographicCamera | undefined;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit() {
     gsap.registerPlugin(ScrollTrigger);
@@ -28,9 +29,6 @@ export class PortofolioComponent implements OnInit {
     this.animateSections();
   }
 
-
-
-
   private initThreeJS(): void {
     const container = document.getElementById('three-canvas-container')!;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -38,7 +36,12 @@ export class PortofolioComponent implements OnInit {
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
     this.camera.position.z = 5;
 
     // const aspect = window.innerWidth / window.innerHeight;
@@ -46,7 +49,10 @@ export class PortofolioComponent implements OnInit {
     // this.camera.position.z = 1;
 
     const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+    const material = new THREE.MeshBasicMaterial({
+      color: 0x00ff00,
+      wireframe: true,
+    });
     this.sphere = new THREE.Mesh(geometry, material);
     this.scene.add(this.sphere);
 
@@ -55,54 +61,50 @@ export class PortofolioComponent implements OnInit {
     this.loadAssets();
   }
 
-
-  loadAssets(){
+  loadAssets() {
     const loader = new SVGLoader();
 
-    loader.load('./assets/textures/SVG/cloud_01.svg',(data)=>{
-      const paths = data.paths;
-		  const group = new THREE.Group();
+    loader.load(
+      './assets/textures/SVG/cloud_01.svg',
+      (data) => {
+        const paths = data.paths;
+        const group = new THREE.Group();
 
-      for ( let i = 0; i < paths.length; i ++ ) {
+        for (let i = 0; i < paths.length; i++) {
+          const path = paths[i];
 
-        const path = paths[ i ];
-  
-        const material = new THREE.MeshBasicMaterial( {
-          color: path.color,
-          side: THREE.DoubleSide,
-          depthWrite: false
-        } );
-  
-        const shapes = SVGLoader.createShapes( path );
-  
-        for ( let j = 0; j < shapes.length; j ++ ) {
-  
-          const shape = shapes[ j ];
-          const geometry = new THREE.ShapeGeometry( shape );
-          const mesh = new THREE.Mesh( geometry, material );
-          group.add( mesh );
-  
+          const material = new THREE.MeshBasicMaterial({
+            color: path.color,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+
+          const shapes = SVGLoader.createShapes(path);
+
+          for (let j = 0; j < shapes.length; j++) {
+            const shape = shapes[j];
+            const geometry = new THREE.ShapeGeometry(shape);
+            const mesh = new THREE.Mesh(geometry, material);
+            group.add(mesh);
+          }
         }
 
+        this.scene!.add(group);
+
+        console.log(group);
+      },
+      (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
       }
-
-      this.scene!.add(group);
-
-      console.log(group);
-    }, (xhr)=>{
-      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-    })
+    );
   }
 
-
-  onWindowResize(){
-    window.addEventListener('resize', ()=>{
-    this.renderer!.setSize( window.innerWidth, window.innerHeight );
-    this.camera!.aspect = window.innerWidth / window.innerHeight;
-    this.camera!.updateProjectionMatrix();
-
-    
-    })
+  onWindowResize() {
+    window.addEventListener('resize', () => {
+      this.renderer!.setSize(window.innerWidth, window.innerHeight);
+      this.camera!.aspect = window.innerWidth / window.innerHeight;
+      this.camera!.updateProjectionMatrix();
+    });
   }
 
   private animate(): void {
@@ -111,7 +113,6 @@ export class PortofolioComponent implements OnInit {
       // You can add additional animations here
 
       this.sphere.rotation.y -= 10;
-
     }
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
@@ -119,53 +120,89 @@ export class PortofolioComponent implements OnInit {
   }
 
   private animateSections(): void {
-    gsap.from(".welcome-section h1", { opacity: 0, y: -50, duration: 1.5 });
+    gsap.from('.welcome-section h1', { opacity: 0, y: -50, duration: 1.5 });
 
-    gsap.from(".data-about", {
+    gsap.from('.data-about', {
       opacity: 0,
       y: 100,
       // duration: 1,
-      stagger:1,
+      stagger: 1,
       ease: 'power2.out',
       scrollTrigger: {
         // markers:true,
-        trigger: ".about-section",
-        start: "top 80%",
-        scrub:3
-      }
+        trigger: '.about-section',
+        start: 'top 80%',
+        scrub: 3,
+      },
     });
 
-    gsap.from(".contact-section", {
+    gsap.from('.contact-section', {
       opacity: 0,
       y: 100,
       duration: 1,
       scrollTrigger: {
-        trigger: ".contact-section",
-        start: "top 80%",
-      }
+        trigger: '.contact-section',
+        start: 'top 80%',
+      },
     });
 
     // Scroll-triggered mesh animation
     gsap.to(this.sphere!.position, {
       // x: Math.PI * 2,  // Rotate 360 degrees
       // y: Math.PI * 2,
-      z:Math.PI * 2,
+      z: Math.PI * 2,
       scrollTrigger: {
-        trigger: ".about-section",  // Start animation when ".about-section" enters the viewport
-        start: "top 100%",
-        end: "top 20%",
-        scrub: true,  // Sync animation with scroll
-      }
+        trigger: '.about-section', // Start animation when ".about-section" enters the viewport
+        start: 'top 100%',
+        end: 'top 20%',
+        scrub: true, // Sync animation with scroll
+      },
     });
 
     gsap.to(this.camera!.position, {
       z: 10,
       scrollTrigger: {
-        trigger: ".contact-section",
-        start: "top 80%",
-        end: "top 20%",
+        trigger: '.contact-section',
+        start: 'top 80%',
+        end: 'top 20%',
         scrub: true,
-      }
+      },
+    });
+
+    const splitTypes = gsap.utils.toArray('.split-type');
+
+    document.querySelectorAll('.split-type').forEach((char: any) => {
+      const text = new SplitType(char, { types: ['chars', 'words'] });
+
+      console.log(text);
+      gsap.from(text.chars, {
+        opacity: 0.2,
+        // y: 100,
+        duration: 1,
+        stagger: 0.1,
+        scrollTrigger: {
+          trigger: '.contact-section',
+          start: 'top 40%',
+          end: 'top 10%',
+          scrub: true,
+          markers: true,
+        },
+      });
+    });
+
+    console.log(splitTypes);
+
+    splitTypes.forEach((splitType: any, index) => {
+      console.log(splitType);
+      // gsap.from(splitType, {
+      //   opacity: 0,
+      //   y: 100,
+      //   duration: 1,
+      //   scrollTrigger: {
+      //     trigger: splitType,
+      //     start: 'top 80%',
+      //   },
+      // });
     });
   }
 }
